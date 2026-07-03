@@ -57,7 +57,7 @@ export namespace kairo::foundation::raytracer
             for (std::uint32_t x = 0; x < film.Width(); ++x)
             {
                 const Color3f color =
-                    Saturate(film.GetPixel(x, y));
+                    Saturate(ToneMapReinhard(film.GetPixel(x, y)));
 
                 out << static_cast<int>(LinearChannelToByte(color.r)) << ' '
                     << static_cast<int>(LinearChannelToByte(color.g)) << ' '
@@ -196,7 +196,7 @@ export namespace kairo::foundation::raytracer
             for (std::uint32_t x = 0; x < film.Width(); ++x)
             {
                 const Color3f color =
-                    Saturate(film.GetPixel(x, y));
+                    Saturate(ToneMapReinhard(film.GetPixel(x, y)));
 
                 raw.push_back(LinearChannelToByte(color.r));
                 raw.push_back(LinearChannelToByte(color.g));

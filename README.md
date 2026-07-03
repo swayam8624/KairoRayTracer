@@ -127,6 +127,7 @@ material name lambert|mirror|emissive r g b [emitR emitG emitB]
 material name glass r g b ior
 material name pbr r g b roughness metallic
 light point x y z r g b intensity
+light area px py pz ux uy uz vx vy vz r g b intensity samples
 sphere x y z radius materialName
 triangle ax ay az bx by bz cx cy cz materialName
 obj relative_or_absolute_path materialName scale tx ty tz
@@ -150,6 +151,7 @@ scenes/glass_refraction.kairo
 scenes/mesh_showcase.kairo
 scenes/pbr_showcase.kairo
 scenes/path_showcase.kairo
+scenes/area_light_soft_shadow.kairo
 ```
 
 Scene purpose:
@@ -168,6 +170,7 @@ glass_refraction.kairo   glass material and Schlick Fresnel/refraction test
 mesh_showcase.kairo      OBJ mesh loading converted into triangle primitives
 pbr_showcase.kairo       Cook-Torrance/GGX direct lighting demo
 path_showcase.kairo      stochastic cosine-hemisphere path tracing demo
+area_light_soft_shadow.kairo rectangular area light and soft-shadow test
 ```
 
 Render every main debug output for the default scene:

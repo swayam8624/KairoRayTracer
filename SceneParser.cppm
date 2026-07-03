@@ -371,19 +371,40 @@ export namespace kairo::foundation::raytracer
             }
             else if (command == "light")
             {
-                parser_detail::RequireCount(tokens, line, 9, "light point x y z r g b intensity");
-                if (tokens[1].Text != "point")
+                if (tokens.size() < 2)
                 {
-                    parser_detail::Fail(line, tokens[1].Column, "only point lights are supported in V1.");
+                    parser_detail::Fail(line, tokens[0].Column, "usage: light point ... or light area ...");
                 }
 
-                scene.Lights.push_back(
-                    PointLight
-                    {
-                        parser_detail::ParseVec3(tokens, line, 2),
-                        parser_detail::ParseColor(tokens, line, 5),
-                        parser_detail::ParseFloat(tokens[8], line)
-                    });
+                if (tokens[1].Text == "point")
+                {
+                    parser_detail::RequireCount(tokens, line, 9, "light point x y z r g b intensity");
+                    scene.Lights.push_back(
+                        PointLight
+                        {
+                            parser_detail::ParseVec3(tokens, line, 2),
+                            parser_detail::ParseColor(tokens, line, 5),
+                            parser_detail::ParseFloat(tokens[8], line)
+                        });
+                }
+                else if (tokens[1].Text == "area")
+                {
+                    parser_detail::RequireCount(tokens, line, 16, "light area px py pz ux uy uz vx vy vz r g b intensity samples");
+                    scene.AreaLights.push_back(
+                        AreaLight
+                        {
+                            parser_detail::ParseVec3(tokens, line, 2),
+                            parser_detail::ParseVec3(tokens, line, 5),
+                            parser_detail::ParseVec3(tokens, line, 8),
+                            parser_detail::ParseColor(tokens, line, 11),
+                            parser_detail::ParseFloat(tokens[14], line),
+                            parser_detail::ParseUInt(tokens[15], line)
+                        });
+                }
+                else
+                {
+                    parser_detail::Fail(line, tokens[1].Column, "unknown light type `" + tokens[1].Text + "`.");
+                }
             }
             else if (command == "sphere")
             {

@@ -238,6 +238,69 @@ export namespace kairo::foundation::raytracer
                 (nDotL * attenuation);
         }
 
+        for (const AreaLight& light : scene.AreaLights)
+        {
+            const std::uint32_t samples =
+                std::max(1u, light.Samples);
+
+            for (std::uint32_t sample = 0; sample < samples; ++sample)
+            {
+                const float u =
+                    (static_cast<float>(sample % 2u) + 0.5f) / 2.0f - 0.5f;
+
+                const float v =
+                    (static_cast<float>((sample / 2u) % 2u) + 0.5f) / 2.0f - 0.5f;
+
+                const Vec3f lightPosition =
+                    light.Position + light.U * u + light.V * v;
+
+                const Vec3f toLight =
+                    lightPosition - hit->Position;
+
+                const float lightDistance =
+                    toLight.Length();
+
+                if (lightDistance <= 1.0e-4f)
+                {
+                    continue;
+                }
+
+                const Vec3f lightDirection =
+                    toLight / lightDistance;
+
+                const float nDotL =
+                    std::max(Dot(hit->Normal, lightDirection), 0.0f);
+
+                if (nDotL <= 0.0f)
+                {
+                    continue;
+                }
+
+                const Rayf shadowRay =
+                    Rayf::FromOriginDirection(
+                        hit->Position + hit->Normal * RayBiasForHit(scene.Settings, hit->Distance),
+                        lightDirection);
+
+                if (stats)
+                {
+                    ++stats->ShadowRays;
+                }
+
+                if (scene.Occluded(shadowRay, lightDistance - RayBiasForHit(scene.Settings, hit->Distance), stats))
+                {
+                    continue;
+                }
+
+                const float attenuation =
+                    light.Intensity / std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
+
+                color +=
+                    material.Albedo *
+                    light.Color *
+                    (nDotL * attenuation / static_cast<float>(samples));
+            }
+        }
+
         return color;
     }
 

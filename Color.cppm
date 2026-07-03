@@ -132,6 +132,18 @@ export namespace kairo::foundation::raytracer
     /// Output: byte encoded using gamma 1/2.2 after clamping.
     /// Task: convert renderer output into a portable PPM byte channel.
     [[nodiscard]]
+    inline Color3f ToneMapReinhard(
+        const Color3f& color) noexcept
+    {
+        return
+        {
+            color.r / (1.0f + color.r),
+            color.g / (1.0f + color.g),
+            color.b / (1.0f + color.b)
+        };
+    }
+
+    [[nodiscard]]
     inline std::uint8_t LinearChannelToByte(
         float value) noexcept
     {

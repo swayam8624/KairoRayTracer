@@ -311,7 +311,8 @@ TEST_CASE("Bundled scenes parse and build acceleration", "[RayTracer][Scenes]")
         "glass_refraction.kairo",
         "mesh_showcase.kairo",
         "pbr_showcase.kairo",
-        "path_showcase.kairo"
+        "path_showcase.kairo",
+        "area_light_soft_shadow.kairo"
     };
 
     for (const char* sceneName : sceneNames)

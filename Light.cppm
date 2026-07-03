@@ -1,5 +1,7 @@
 module;
 
+#include <cstdint>
+
 export module Kairo.Foundation.RayTracer.Light;
 
 import Kairo.Foundation.Math.Vector;
@@ -17,5 +19,15 @@ export namespace kairo::foundation::raytracer
         Vec3f Position = Vec3f::Zero();
         Color3f Color = Color3f::White();
         float Intensity = 1.0f;
+    };
+
+    struct AreaLight final
+    {
+        Vec3f Position = Vec3f::Zero();
+        Vec3f U = Vec3f::UnitX();
+        Vec3f V = Vec3f::Forward();
+        Color3f Color = Color3f::White();
+        float Intensity = 1.0f;
+        std::uint32_t Samples = 4;
     };
 }

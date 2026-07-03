@@ -129,6 +129,70 @@ export namespace kairo::foundation::raytracer
                 (nDotL * attenuation);
         }
 
+        for (const AreaLight& light : scene.AreaLights)
+        {
+            const std::uint32_t samples =
+                std::max(1u, light.Samples);
+
+            for (std::uint32_t sample = 0; sample < samples; ++sample)
+            {
+                const float u =
+                    (static_cast<float>(sample % 2u) + 0.5f) / 2.0f - 0.5f;
+
+                const float v =
+                    (static_cast<float>((sample / 2u) % 2u) + 0.5f) / 2.0f - 0.5f;
+
+                const Vec3f lightPosition =
+                    light.Position + light.U * u + light.V * v;
+
+                const Vec3f toLight =
+                    lightPosition - hit.Position;
+
+                const float lightDistance =
+                    toLight.Length();
+
+                if (lightDistance <= 1.0e-4f)
+                {
+                    continue;
+                }
+
+                const Vec3f lightDirection =
+                    toLight / lightDistance;
+
+                const float nDotL =
+                    std::max(Dot(hit.Normal, lightDirection), 0.0f);
+
+                if (nDotL <= 0.0f)
+                {
+                    continue;
+                }
+
+                if (stats)
+                {
+                    ++stats->ShadowRays;
+                }
+
+                const Rayf shadowRay =
+                    Rayf::FromOriginDirection(
+                        hit.Position + hit.Normal * RayBiasForHit(scene.Settings, hit.Distance),
+                        lightDirection);
+
+                if (scene.Occluded(shadowRay, lightDistance - RayBiasForHit(scene.Settings, hit.Distance), stats))
+                {
+                    continue;
+                }
+
+                const float attenuation =
+                    light.Intensity /
+                    std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
+
+                color +=
+                    material.Albedo *
+                    light.Color *
+                    (nDotL * attenuation / static_cast<float>(samples));
+            }
+        }
+
         return color;
     }
 
@@ -183,6 +247,17 @@ export namespace kairo::foundation::raytracer
             return direct;
         }
 
+        float survivalProbability =
+            std::max({ material.Albedo.r, material.Albedo.g, material.Albedo.b, 0.15f });
+
+        survivalProbability =
+            std::min(survivalProbability, 0.95f);
+
+        if (depth >= 2 && Random01(rng) > survivalProbability)
+        {
+            return direct;
+        }
+
         const Vec3f bounceDirection =
             CosineHemisphereDirection(hit->Normal, rng);
 
@@ -193,7 +268,7 @@ export namespace kairo::foundation::raytracer
 
         const Color3f indirect =
             material.Albedo *
-            TracePath(scene, bounceRay, depth + 1, rng, stats);
+            (TracePath(scene, bounceRay, depth + 1, rng, stats) / survivalProbability);
 
         return direct + indirect;
     }
