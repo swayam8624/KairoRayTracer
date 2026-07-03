@@ -6,4 +6,7 @@ cmake-build-*/
 outputs/*.ppm
 outputs/*.png
 outputs/*.hdr
+outputs/*.csv
 !outputs/.gitkeep
+!outputs/gallery/
+!outputs/gallery/*.png

@@ -1,56 +1,39 @@
 # KairoRayTracer
 
-`KairoRayTracer` is a standalone CPU ray tracer under the Kairo workspace. It is
-the first visible graphics artifact that forces the foundation stack to work
+`KairoRayTracer` is a standalone CPU renderer in the Kairo workspace. It is the
+first visible graphics artifact that forces the foundation stack to work
 together:
 
 ```text
 KairoMath -> KairoGeometry -> KairoSpatial -> rendered image
 ```
 
-The project started as a strict V1 offline renderer and now includes the first
-V2-V4 upgrades: PNG output, threaded tiles, area lights, OBJ mesh loading, glass,
-PBR direct lighting, and a small path tracer. It still intentionally avoids
-ImGui, Vulkan, Metal, and JSON so the CPU renderer and `.kairo` scene DSL stay
-easy to inspect.
+The repo is currently in a stabilization freeze: no new integrators, ImGui, GPU,
+glTF, or editor systems. The goal of this pass is trust: deterministic renders,
+validated settings, reproducible benchmark output, and a developer README with
+real images.
 
-The core library is CLI/headless friendly. GLFW and OpenGL are required only
-when `KAIRO_RAYTRACER_BUILD_PREVIEW=ON`.
+## Gallery
 
-## How To Read This Project
+| Whitted Cornell | PBR Cornell |
+|---|---|
+| ![Whitted Cornell](outputs/gallery/cornell_whitted.png) | ![PBR Cornell](outputs/gallery/cornell_pbr.png) |
 
-Read the code in this order if you want to master the concepts:
+| Path Tracing | Glass Refraction |
+|---|---|
+| ![Path tracing showcase](outputs/gallery/path_showcase.png) | ![Glass refraction showcase](outputs/gallery/glass_refraction.png) |
 
-```text
-Color.cppm          linear color, gamma, output bytes
-Film.cppm           image memory layout
-Camera.cppm         pinhole camera and primary rays
-Primitive.cppm      sphere/triangle bounds and intersections
-Scene.cppm          render objects mapped into KairoSpatial BVH
-SceneParser.cppm    .kairo text scene format
-NormalIntegrator    normal visualization
-DepthIntegrator     depth visualization
-WhittedIntegrator   lighting, shadows, recursive mirror rays
-Renderer.cppm       pixel loop and integrator dispatch
-PreviewWindow.cppm  CPU film displayed in a GLFW/OpenGL window
-```
+| OBJ Mesh | Area Light Soft Shadows |
+|---|---|
+| ![OBJ mesh showcase](outputs/gallery/mesh_showcase.png) | ![Area light soft shadow showcase](outputs/gallery/area_light_soft_shadow.png) |
 
-The most important mental model:
+| BVH Heatmap | Acceleration Difference |
+|---|---|
+| ![BVH heatmap](outputs/gallery/bvh_heatmap.png) | ![Acceleration difference](outputs/gallery/accel_diff.png) |
 
-```text
-scene file
-  -> parser
-  -> Scene materials/lights/primitives
-  -> primitive bounds
-  -> KairoSpatial BVH
-  -> camera ray per pixel
-  -> exact primitive intersection
-  -> integrator shading
-  -> Film
-  -> PPM/PNG file and optional preview window
-```
+## Quickstart
 
-## Build
+Build and test with the module-capable LLVM toolchain:
 
 ```bash
 cd /Users/swayamsingal/Desktop/Programming/Kairo/KairoRayTracer
@@ -59,6 +42,22 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+Render an image:
+
+```bash
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --output outputs/beauty.png
+open outputs/beauty.png
+```
+
+Render at a different resolution:
+
+```bash
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --width 1280 --height 720 --output outputs/cornell_720p.png
+```
+
+`--width` and `--height` re-render a new film and update camera aspect ratio.
+Resizing the preview window only scales the already-rendered texture.
+
 Headless CLI-only build:
 
 ```bash
@@ -66,76 +65,41 @@ cmake -S . -B build-headless -G Ninja -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llv
 cmake --build build-headless
 ```
 
-If the preview target cannot find GLFW:
-
-```bash
-brew install glfw
-```
-
-## Render To Image
-
-```bash
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --output outputs/beauty.ppm
-open outputs/beauty.ppm
-```
-
-Render at a different resolution by overriding width and height. This changes
-the actual camera aspect ratio and generates a new film, unlike resizing the
-preview window, which only scales the already-rendered texture:
-
-```bash
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --width 1280 --height 720 --output outputs/cornell_720p.png
-```
-
-Save benchmark stats next to the image when comparing modes, sample counts, or
-BVH changes:
-
-```bash
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode bvh_heatmap --width 640 --height 360 --stats outputs/cornell_stats.csv
-```
-
-Do not run image paths directly:
-
-```bash
-outputs/beauty.ppm      # wrong: the shell tries to execute the image
-open outputs/beauty.ppm # correct: opens the image in Preview
-```
-
-Lines beginning with `#` in README examples are comments, not commands to paste
-after the command prompt.
-
-Debug modes:
-
-```bash
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode normal --output outputs/normal.ppm
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode depth --output outputs/depth.ppm
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode shadow_mask --output outputs/shadow_mask.ppm
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode bvh_heatmap --output outputs/bvh_heatmap.ppm
-```
-
-## Preview Window
-
-```bash
-./build/KairoRayTracerPreview scenes/cornell.kairo --mode whitted
-```
-
-Controls:
+## Architecture
 
 ```text
-Esc  close
-S    save current film to outputs/*.ppm
-R    reload and re-render the same scene file
-Arrow keys orbit the camera around the current focus estimate and re-render
-Q/E  zoom the orbit camera in/out and re-render
-Home reset the preview orbit
+.kairo scene
+  -> SceneParser
+  -> materials, lights, primitives, camera, settings
+  -> KairoSpatial acceleration structure
+  -> Renderer tile loop
+  -> integrator/debug mode
+  -> Film
+  -> PPM/PNG image and optional GLFW preview
 ```
 
-The preview is a lightweight viewer with camera inspection controls. It is not
-an editor and does not use ImGui.
+Core renderer modules do not depend on GLFW or OpenGL. `PreviewWindow.cppm` is
+compiled only for `KairoRayTracerPreview` when
+`KAIRO_RAYTRACER_BUILD_PREVIEW=ON`.
 
-## Scene Format
+## Implemented Capabilities
 
-`.kairo` is line-oriented. `#` starts a comment.
+```text
+Geometry: spheres, triangles, OBJ meshes converted to triangles
+Acceleration: brute force, SAH BVH, Morton-ordered BVH
+Lighting: point lights, rectangular area lights, hard and soft shadows
+Materials: lambert, mirror, emissive, glass, roughness-metallic PBR
+Modes: whitted, pbr, path, normal, depth, shadow_mask, bvh_heatmap,
+       albedo, primitive_id, uv, barycentric, accel_diff
+Output: PPM, PNG, CSV render stats
+Execution: stratified SPP, threaded tiles, deterministic fixed-scene renders
+Preview: GLFW image viewer with save, reload, orbit, zoom, and reset controls
+```
+
+## Scene DSL
+
+`.kairo` is a strict line-oriented scene format. `#` starts a comment.
+Materials must be declared before primitives that reference them.
 
 ```text
 resolution width height
@@ -153,131 +117,134 @@ triangle ax ay az bx by bz cx cy cz materialName
 obj relative_or_absolute_path materialName scale tx ty tz
 ```
 
-V1 requires materials to be declared before primitives that reference them.
-
 Example scenes:
 
 ```text
-scenes/cornell.kairo
-scenes/reflective_spheres.kairo
-scenes/triangle_floor.kairo
-scenes/shadow_lab.kairo
-scenes/mirror_hall.kairo
-scenes/bvh_stress.kairo
-scenes/normal_depth_lab.kairo
-scenes/emissive_showcase.kairo
-scenes/parser_reference.kairo
-scenes/glass_refraction.kairo
-scenes/mesh_showcase.kairo
-scenes/pbr_showcase.kairo
-scenes/path_showcase.kairo
-scenes/area_light_soft_shadow.kairo
+cornell.kairo                  Whitted/PBR Cornell-style room
+path_showcase.kairo            path tracing smoke and gallery scene
+glass_refraction.kairo         glass, refraction, and Fresnel
+mesh_showcase.kairo            OBJ loading through triangle primitives
+area_light_soft_shadow.kairo   rectangular area light and soft shadows
+bvh_stress.kairo               acceleration/debug heatmap scene
 ```
 
-Scene purpose:
+## Debug Modes
 
 ```text
-cornell.kairo            room, colored walls, mirror object, good default beauty test
-reflective_spheres.kairo open floor and multiple lights for readable reflections
-triangle_floor.kairo     simple normal/debug scene
-shadow_lab.kairo         hard-shadow blocker test
-mirror_hall.kairo        recursive mirror stress test
-bvh_stress.kairo         many primitives for bvh_heatmap traversal visualization
-normal_depth_lab.kairo   clean shapes for normal/depth render modes
-emissive_showcase.kairo  visible emissive geometry plus colored lights
-parser_reference.kairo   compact reference for every V1 scene command
-glass_refraction.kairo   glass material and Schlick Fresnel/refraction test
-mesh_showcase.kairo      OBJ mesh loading converted into triangle primitives
-pbr_showcase.kairo       Cook-Torrance/GGX direct lighting demo
-path_showcase.kairo      stochastic cosine-hemisphere path tracing demo
-area_light_soft_shadow.kairo rectangular area light and soft-shadow test
+normal       surface normal and winding check
+depth        camera framing and hit-distance check
+shadow_mask  light visibility and ray-bias check
+bvh_heatmap  traversal cost visualization
+albedo       material assignment without lighting
+primitive_id primitive identity and parser ordering
+uv           triangle UV/barycentric preservation
+barycentric  triangle interpolation coordinates
+accel_diff   BVH-vs-brute correctness image; black means match
 ```
 
-Render every main debug output for the default scene:
+Generate the main debug set:
 
 ```bash
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --output outputs/beauty.ppm
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode normal --output outputs/normal.ppm
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode depth --output outputs/depth.ppm
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode shadow_mask --output outputs/shadow_mask.ppm
-./build/KairoRayTracerCLI scenes/cornell.kairo --mode bvh_heatmap --output outputs/bvh_heatmap.ppm
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode normal --output outputs/normal.png
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode depth --output outputs/depth.png
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode shadow_mask --output outputs/shadow_mask.png
+./build/KairoRayTracerCLI scenes/bvh_stress.kairo --mode bvh_heatmap --output outputs/bvh_heatmap.png
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode accel_diff --output outputs/accel_diff.png
 ```
 
-## Implemented Features
+## Preview Window
+
+```bash
+./build/KairoRayTracerPreview scenes/cornell.kairo --mode whitted
+```
+
+Controls:
 
 ```text
-Sphere and triangle primitives
-Variant primitive storage
-KairoSpatial BVH acceleration
-Brute-force intersection path for tests
-Normal, depth, albedo, primitive-id, UV, barycentric, shadow-mask, acceleration-diff, and BVH-heatmap debug modes
-Whitted reflection, mirror materials, glass refraction, Schlick Fresnel
-Point lights, rectangular area lights, hard and soft shadows, emissive materials
-Cook-Torrance/GGX PBR direct lighting
-Cosine-hemisphere path tracing with Russian roulette
-Stratified anti-aliasing
-Threaded tile rendering
-PPM and PNG output
-CSV render statistics
-OBJ mesh loading
-Minimal GLFW preview with reload, save, orbit, and zoom controls
+Esc   close
+S     save current film
+R     reload and re-render the scene file
+Arrows orbit camera around the current focus estimate and re-render
+Q/E   zoom orbit camera in/out and re-render
+Home  reset preview orbit
+```
+
+The preview is a lightweight image viewer, not an editor and not ImGui.
+
+## Benchmark Snapshot
+
+Scene: `scenes/bvh_stress.kairo`  
+Primitive count: 17  
+Resolution: `640x370`  
+SPP: `1`  
+Threads: `4`  
+Machine/date: local Apple Silicon run during stabilization.
+
+| Mode | Primitives | Resolution | SPP | Threads | Time | Rays/s | Nodes/ray | Tests/ray |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Brute force | 17 | 640x370 | 1 | 4 | 185.205 ms | 2.02405e+06 | 0 | 16.8813 |
+| BVH SAH | 17 | 640x370 | 1 | 4 | 210.430 ms | 1.78142e+06 | 1.95113 | 2.25284 |
+| BVH Morton | 17 | 640x370 | 1 | 4 | 228.282 ms | 1.64211e+06 | 2.24750 | 4.74690 |
+
+Commands:
+
+```bash
+./build/KairoRayTracerCLI scenes/bvh_stress.kairo --mode whitted --accel brute --width 640 --height 370 --samples 1 --threads 4 --output outputs/bvh_stress_brute.png --stats outputs/bench_brute.csv
+./build/KairoRayTracerCLI scenes/bvh_stress.kairo --mode whitted --accel sah --width 640 --height 370 --samples 1 --threads 4 --output outputs/bvh_stress_sah.png --stats outputs/bench_sah.csv
+./build/KairoRayTracerCLI scenes/bvh_stress.kairo --mode whitted --accel morton --width 640 --height 370 --samples 1 --threads 4 --output outputs/bvh_stress_morton.png --stats outputs/bench_morton.csv
+```
+
+This benchmark is intentionally reported as a snapshot. With only 17 primitives,
+brute force can win wall-clock time because traversal overhead dominates, while
+SAH still proves the acceleration structure by cutting primitive tests per ray
+from `16.8813` to `2.25284`.
+
+## Stabilization Status
+
+The current test suite covers:
+
+```text
+Parser errors with line/column output
+Camera center ray
+Sphere and triangle hit records
+BVH hit equivalence to brute force, including UV/barycentric data
+Shadow occlusion
+Whitted, PBR, path, OBJ, and area-light render smoke tests
+Path determinism and finite/no-NaN pixels
+Single-thread versus multi-thread render equality
+SPP 1, 4, and 16 render stability
+PNG header/dimension output
+CSV stats output
+Renderer setting validation
+CLI invalid numeric override rejection
+```
+
+Validation rejects unsafe direct `RenderSettings` values before rendering:
+
+```text
+Width == 0
+Height == 0
+SamplesPerPixel == 0
+TileSize == 0
+DepthFar <= DepthNear
+Width/Height > 32768
+SamplesPerPixel > 4096
+TileSize > 4096
+MaxDepth > 64
+ThreadCount > 1024
 ```
 
 ## Deferred
 
 ```text
 Progressive rendering
-HDR output/environment lighting
-glTF loading
-Texture image loading and filtered material textures
-Normal interpolation from mesh vertex normals
+HDR output and environment lighting
+Texture loading and filtered texture sampling
+Normal interpolation from OBJ vertex normals
 Per-pixel traversal analytics CSV
 Multiple importance sampling
+Denoising experiments
 ImGui debug/editor UI
 GPU backend
-```
-
-## Concept Notes
-
-Ray tracing:
-
-```text
-For each pixel, the camera creates a ray. The scene finds the nearest surface
-hit. The integrator decides what color that hit should produce.
-```
-
-BVH acceleration:
-
-```text
-Brute force tests every primitive for every ray. BVH traversal first rejects
-large empty regions using bounding boxes, then tests only likely primitives.
-```
-
-Whitted shading:
-
-```text
-Whitted rendering is direct lighting plus recursive perfect reflections. It is
-not global illumination; diffuse surfaces do not bounce indirect light yet.
-```
-
-Shadow rays:
-
-```text
-After a primary ray hits a surface, a secondary ray is sent toward each light.
-If anything blocks that segment, that light contributes nothing at the point.
-```
-
-Debug render modes:
-
-```text
-normal       checks surface normals and winding
-depth        checks nearest-hit distance and camera framing
-shadow_mask  checks light visibility and self-intersection bias
-bvh_heatmap  checks acceleration traversal cost
-albedo       checks material assignment without lighting
-primitive_id checks primitive identity and parser ordering
-uv           checks triangle UV/barycentric preservation
-barycentric  checks triangle interpolation coordinates
-accel_diff   checks BVH output against brute force
-whitted      combines geometry, BVH, materials, lights, shadows, and reflection
+glTF loading
 ```
