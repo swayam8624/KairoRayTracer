@@ -10,6 +10,8 @@ export import Kairo.Foundation.RayTracer.Camera;
 export import Kairo.Foundation.RayTracer.Material;
 export import Kairo.Foundation.RayTracer.Light;
 export import Kairo.Foundation.RayTracer.Primitive;
+export import Kairo.Foundation.RayTracer.Mesh;
+export import Kairo.Foundation.RayTracer.OBJLoader;
 export import Kairo.Foundation.RayTracer.Scene;
 export import Kairo.Foundation.RayTracer.SceneParser;
 export import Kairo.Foundation.RayTracer.Sampler;

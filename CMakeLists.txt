@@ -63,6 +63,8 @@ target_sources(KairoRayTracer
             Material.cppm
             Light.cppm
             Primitive.cppm
+            Mesh.cppm
+            OBJLoader.cppm
             Scene.cppm
             SceneParser.cppm
             Sampler.cppm
