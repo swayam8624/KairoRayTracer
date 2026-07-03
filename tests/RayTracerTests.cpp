@@ -1,6 +1,8 @@
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -36,6 +38,93 @@ triangle -3 0 -3 3 0 -3 3 0 3 floor
 triangle -3 0 -3 3 0 3 -3 0 3 floor
 sphere 0 1 0 1 red
 )";
+    }
+
+    [[nodiscard]]
+    std::filesystem::path SceneRoot()
+    {
+        return std::filesystem::path(__FILE__).parent_path().parent_path() / "scenes";
+    }
+
+    [[nodiscard]]
+    bool IsFiniteColor(
+        const Color3f& color)
+    {
+        return
+            std::isfinite(color.r) &&
+            std::isfinite(color.g) &&
+            std::isfinite(color.b);
+    }
+
+    void RequireFiniteImage(
+        const Film& film)
+    {
+        for (const Color3f& pixel : film.Pixels())
+        {
+            REQUIRE(IsFiniteColor(pixel));
+        }
+    }
+
+    [[nodiscard]]
+    bool HasNonBlackPixel(
+        const Film& film)
+    {
+        for (const Color3f& pixel : film.Pixels())
+        {
+            if (IsNonBlack(pixel))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void RequireImagesNear(
+        const Film& a,
+        const Film& b,
+        float tolerance)
+    {
+        REQUIRE(a.Width() == b.Width());
+        REQUIRE(a.Height() == b.Height());
+        REQUIRE(a.Pixels().size() == b.Pixels().size());
+
+        for (std::size_t i = 0; i < a.Pixels().size(); ++i)
+        {
+            REQUIRE(a.Pixels()[i].r == Catch::Approx(b.Pixels()[i].r).margin(tolerance));
+            REQUIRE(a.Pixels()[i].g == Catch::Approx(b.Pixels()[i].g).margin(tolerance));
+            REQUIRE(a.Pixels()[i].b == Catch::Approx(b.Pixels()[i].b).margin(tolerance));
+        }
+    }
+
+    void ConfigureTinyRender(
+        Scene& scene,
+        RenderMode mode,
+        std::uint32_t width = 24,
+        std::uint32_t height = 16,
+        std::uint32_t samples = 1,
+        std::uint32_t threads = 1)
+    {
+        scene.Settings.Mode = mode;
+        scene.Settings.Width = width;
+        scene.Settings.Height = height;
+        scene.Settings.SamplesPerPixel = samples;
+        scene.Settings.ThreadCount = threads;
+        scene.Settings.TileSize = 8;
+        scene.MainCamera.AspectRatio =
+            static_cast<float>(scene.Settings.Width) /
+            static_cast<float>(scene.Settings.Height);
+    }
+
+    [[nodiscard]]
+    std::uint32_t ReadU32BE(
+        const unsigned char* bytes)
+    {
+        return
+            (static_cast<std::uint32_t>(bytes[0]) << 24u) |
+            (static_cast<std::uint32_t>(bytes[1]) << 16u) |
+            (static_cast<std::uint32_t>(bytes[2]) << 8u) |
+            static_cast<std::uint32_t>(bytes[3]);
     }
 }
 
@@ -214,14 +303,142 @@ TEST_CASE("Renderer produces non-black Whitted image", "[RayTracer][Renderer]")
     const RenderResult result =
         Renderer{}.Render(scene);
 
-    bool anyNonBlack = false;
-    for (const Color3f& pixel : result.Image.Pixels())
-    {
-        anyNonBlack = anyNonBlack || IsNonBlack(pixel);
-    }
-
-    REQUIRE(anyNonBlack);
+    RequireFiniteImage(result.Image);
+    REQUIRE(HasNonBlackPixel(result.Image));
     REQUIRE(result.Stats.PrimaryRays == 32u * 24u);
+}
+
+TEST_CASE("PBR image renders finite pixels", "[RayTracer][Renderer]")
+{
+    Scene scene =
+        LoadScene(SceneRoot() / "pbr_showcase.kairo");
+
+    ConfigureTinyRender(scene, RenderMode::PBR, 24, 16, 1, 1);
+
+    const RenderResult result =
+        Renderer{}.Render(scene);
+
+    RequireFiniteImage(result.Image);
+    REQUIRE(HasNonBlackPixel(result.Image));
+}
+
+TEST_CASE("Path mode renders deterministic finite image", "[RayTracer][Renderer]")
+{
+    Scene scene =
+        LoadScene(SceneRoot() / "path_showcase.kairo");
+
+    ConfigureTinyRender(scene, RenderMode::Path, 20, 14, 4, 2);
+
+    const RenderResult first =
+        Renderer{}.Render(scene);
+
+    const RenderResult second =
+        Renderer{}.Render(scene);
+
+    RequireFiniteImage(first.Image);
+    RequireFiniteImage(second.Image);
+    REQUIRE(HasNonBlackPixel(first.Image));
+    RequireImagesNear(first.Image, second.Image, 0.0f);
+}
+
+TEST_CASE("OBJ mesh scene loads and renders", "[RayTracer][Renderer]")
+{
+    Scene scene =
+        LoadScene(SceneRoot() / "mesh_showcase.kairo");
+
+    ConfigureTinyRender(scene, RenderMode::Whitted, 24, 16, 1, 1);
+
+    const RenderResult result =
+        Renderer{}.Render(scene);
+
+    RequireFiniteImage(result.Image);
+    REQUIRE(HasNonBlackPixel(result.Image));
+}
+
+TEST_CASE("Area light soft-shadow scene renders", "[RayTracer][Renderer]")
+{
+    Scene scene =
+        LoadScene(SceneRoot() / "area_light_soft_shadow.kairo");
+
+    ConfigureTinyRender(scene, RenderMode::Whitted, 24, 16, 1, 1);
+
+    const RenderResult result =
+        Renderer{}.Render(scene);
+
+    RequireFiniteImage(result.Image);
+    REQUIRE(HasNonBlackPixel(result.Image));
+    REQUIRE(result.Stats.ShadowRays > 0);
+}
+
+TEST_CASE("Threaded render equals single-threaded render", "[RayTracer][Renderer]")
+{
+    Scene singleThread =
+        ParseSceneText(MinimalSceneText());
+
+    ConfigureTinyRender(singleThread, RenderMode::Whitted, 24, 16, 4, 1);
+
+    Scene multiThread =
+        singleThread;
+    multiThread.Settings.ThreadCount = 4;
+
+    const RenderResult single =
+        Renderer{}.Render(singleThread);
+
+    const RenderResult threaded =
+        Renderer{}.Render(multiThread);
+
+    RequireImagesNear(single.Image, threaded.Image, 0.0f);
+}
+
+TEST_CASE("Fixed scene renders deterministic images by mode", "[RayTracer][Renderer]")
+{
+    const RenderMode modes[] =
+    {
+        RenderMode::Whitted,
+        RenderMode::PBR,
+        RenderMode::Path
+    };
+
+    for (RenderMode mode : modes)
+    {
+        Scene scene =
+            ParseSceneText(MinimalSceneText());
+
+        ConfigureTinyRender(scene, mode, 18, 12, mode == RenderMode::Path ? 4u : 1u, 2);
+
+        const RenderResult first =
+            Renderer{}.Render(scene);
+
+        const RenderResult second =
+            Renderer{}.Render(scene);
+
+        RequireImagesNear(first.Image, second.Image, 0.0f);
+        RequireFiniteImage(first.Image);
+    }
+}
+
+TEST_CASE("SamplesPerPixel 1 4 and 16 render finite images", "[RayTracer][Renderer]")
+{
+    const std::uint32_t sampleCounts[] =
+    {
+        1,
+        4,
+        16
+    };
+
+    for (std::uint32_t sampleCount : sampleCounts)
+    {
+        Scene scene =
+            ParseSceneText(MinimalSceneText());
+
+        ConfigureTinyRender(scene, RenderMode::Whitted, 16, 12, sampleCount, 2);
+
+        const RenderResult result =
+            Renderer{}.Render(scene);
+
+        RequireFiniteImage(result.Image);
+        REQUIRE(result.Stats.PrimaryRays == 16u * 12u * sampleCount);
+    }
 }
 
 TEST_CASE("Renderer rejects invalid render settings", "[RayTracer][Renderer]")
@@ -287,13 +504,19 @@ TEST_CASE("PNG writer emits valid signature", "[RayTracer][ImageIO]")
     SavePNG(film, outputPath);
 
     std::ifstream in(outputPath, std::ios::binary);
-    unsigned char signature[8] = {};
-    in.read(reinterpret_cast<char*>(signature), 8);
+    unsigned char header[24] = {};
+    in.read(reinterpret_cast<char*>(header), 24);
 
-    REQUIRE(signature[0] == 0x89);
-    REQUIRE(signature[1] == 'P');
-    REQUIRE(signature[2] == 'N');
-    REQUIRE(signature[3] == 'G');
+    REQUIRE(header[0] == 0x89);
+    REQUIRE(header[1] == 'P');
+    REQUIRE(header[2] == 'N');
+    REQUIRE(header[3] == 'G');
+    REQUIRE(header[12] == 'I');
+    REQUIRE(header[13] == 'H');
+    REQUIRE(header[14] == 'D');
+    REQUIRE(header[15] == 'R');
+    REQUIRE(ReadU32BE(header + 16) == 2);
+    REQUIRE(ReadU32BE(header + 20) == 1);
 }
 
 TEST_CASE("Stats writer emits benchmark CSV", "[RayTracer][ImageIO]")
