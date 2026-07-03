@@ -1,0 +1,16 @@
+resolution 640 420
+samples 1
+background 0.025 0.035 0.055
+integrator normal
+camera 0 1.7 5.0 0 0.75 0 0 1 0 44
+
+material floor lambert 0.62 0.62 0.66
+material cyan lambert 0.10 0.80 0.95
+material coral lambert 0.95 0.30 0.22
+
+light point 0 4 2.5 1 1 1 8
+
+triangle -3 0 -3  3 0 -3  3 0 3 floor
+triangle -3 0 -3  3 0 3  -3 0 3 floor
+triangle -1.2 0.02 -0.8  0.0 2.1 -0.4  1.2 0.02 -0.8 cyan
+sphere 0.0 0.55 0.85 0.55 coral

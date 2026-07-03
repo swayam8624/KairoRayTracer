@@ -1,0 +1,29 @@
+# KairoRayTracer V1 Cornell-style scene
+resolution 640 480
+samples 1
+background 0.02 0.025 0.035
+integrator whitted
+camera 0 1.6 5.4 0 1.0 0 0 1 0 42
+
+material red lambert 0.82 0.10 0.08
+material green lambert 0.12 0.65 0.16
+material white lambert 0.78 0.76 0.70
+material mirror mirror 0.90 0.92 0.95
+material lightmat emissive 1.00 0.92 0.78 6.0 5.5 4.4
+
+light point 0 3.6 1.8 1.0 0.92 0.80 7.0
+
+triangle -2 0 -2  2 0 -2  2 0 2 white
+triangle -2 0 -2  2 0 2  -2 0 2 white
+triangle -2 0 -2  -2 0 2  -2 3.2 2 red
+triangle -2 0 -2  -2 3.2 2  -2 3.2 -2 red
+triangle 2 0 -2  2 3.2 -2  2 3.2 2 green
+triangle 2 0 -2  2 3.2 2  2 0 2 green
+triangle -2 3.2 -2  -2 3.2 2  2 3.2 2 white
+triangle -2 3.2 -2  2 3.2 2  2 3.2 -2 white
+triangle -2 0 -2  -2 3.2 -2  2 3.2 -2 white
+triangle -2 0 -2  2 3.2 -2  2 0 -2 white
+
+sphere -0.72 0.58 0.15 0.58 white
+sphere 0.72 0.72 -0.35 0.72 mirror
+triangle -0.45 3.18 0.35  0.45 3.18 0.35  0.0 3.18 -0.35 lightmat

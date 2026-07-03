@@ -1,0 +1,8 @@
+build/
+cmake-build-*/
+.DS_Store
+
+outputs/*.ppm
+outputs/*.png
+outputs/*.hdr
+!outputs/.gitkeep
