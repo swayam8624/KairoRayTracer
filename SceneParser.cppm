@@ -14,12 +14,15 @@ module;
 export module Kairo.Foundation.RayTracer.SceneParser;
 
 import Kairo.Foundation.Math.Vector;
+import Kairo.Foundation.Geometry.Triangle;
 import Kairo.Foundation.RayTracer.Types;
 import Kairo.Foundation.RayTracer.Color;
 import Kairo.Foundation.RayTracer.Camera;
 import Kairo.Foundation.RayTracer.Material;
 import Kairo.Foundation.RayTracer.Light;
 import Kairo.Foundation.RayTracer.Scene;
+import Kairo.Foundation.RayTracer.Mesh;
+import Kairo.Foundation.RayTracer.OBJLoader;
 
 export namespace kairo::foundation::raytracer
 {
@@ -247,7 +250,8 @@ export namespace kairo::foundation::raytracer
 
     [[nodiscard]]
     inline Scene ParseSceneText(
-        const std::string& text)
+        const std::string& text,
+        const std::filesystem::path& baseDirectory = std::filesystem::current_path())
     {
         // First pass and construction happen together because V1 references only
         // earlier material names. This keeps the grammar simple: define material
@@ -405,6 +409,40 @@ export namespace kairo::foundation::raytracer
                     parser_detail::ParseVec3(tokens, line, 7),
                     materialIt->second);
             }
+            else if (command == "obj")
+            {
+                parser_detail::RequireCount(tokens, line, 7, "obj path material scale tx ty tz");
+                const auto materialIt =
+                    materialIndices.find(tokens[2].Text);
+
+                if (materialIt == materialIndices.end())
+                {
+                    parser_detail::Fail(line, tokens[2].Column, "unknown material `" + tokens[2].Text + "`.");
+                }
+
+                std::filesystem::path meshPath =
+                    tokens[1].Text;
+
+                if (meshPath.is_relative())
+                {
+                    meshPath = baseDirectory / meshPath;
+                }
+
+                const TriangleMesh mesh =
+                    LoadOBJMesh(
+                        meshPath,
+                        parser_detail::ParseFloat(tokens[3], line),
+                        parser_detail::ParseVec3(tokens, line, 4));
+
+                for (const Trianglef& triangle : mesh.Triangles)
+                {
+                    scene.AddTriangle(
+                        triangle.A,
+                        triangle.B,
+                        triangle.C,
+                        materialIt->second);
+                }
+            }
             else
             {
                 parser_detail::Fail(line, tokens[0].Column, "unknown command `" + command + "`.");
@@ -453,6 +491,10 @@ export namespace kairo::foundation::raytracer
 
         std::ostringstream buffer;
         buffer << in.rdbuf();
-        return ParseSceneText(buffer.str());
+        return ParseSceneText(
+            buffer.str(),
+            path.has_parent_path()
+                ? path.parent_path()
+                : std::filesystem::current_path());
     }
 }

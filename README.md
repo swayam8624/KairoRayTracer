@@ -127,6 +127,7 @@ material name lambert|mirror|emissive r g b [emitR emitG emitB]
 light point x y z r g b intensity
 sphere x y z radius materialName
 triangle ax ay az bx by bz cx cy cz materialName
+obj relative_or_absolute_path materialName scale tx ty tz
 ```
 
 V1 requires materials to be declared before primitives that reference them.
@@ -144,6 +145,7 @@ scenes/normal_depth_lab.kairo
 scenes/emissive_showcase.kairo
 scenes/parser_reference.kairo
 scenes/glass_refraction.kairo
+scenes/mesh_showcase.kairo
 ```
 
 Scene purpose:
@@ -159,6 +161,7 @@ normal_depth_lab.kairo   clean shapes for normal/depth render modes
 emissive_showcase.kairo  visible emissive geometry plus colored lights
 parser_reference.kairo   compact reference for every V1 scene command
 glass_refraction.kairo   glass material and Schlick Fresnel/refraction test
+mesh_showcase.kairo      OBJ mesh loading converted into triangle primitives
 ```
 
 Render every main debug output for the default scene:
