@@ -87,6 +87,32 @@ export namespace kairo::foundation::raytracer
         std::vector<std::uint8_t> bytes =
             ToSRGBBytes(film);
 
+        GLuint texture = 0;
+        glGenTextures(1, &texture);
+
+        auto uploadTexture =
+            [&]()
+            {
+                glBindTexture(GL_TEXTURE_2D, texture);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                glTexImage2D(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RGB,
+                    static_cast<GLsizei>(film.Width()),
+                    static_cast<GLsizei>(film.Height()),
+                    0,
+                    GL_RGB,
+                    GL_UNSIGNED_BYTE,
+                    bytes.data());
+            };
+
+        uploadTexture();
+
         bool saveWasPressed = false;
         bool rerenderWasPressed = false;
 
@@ -117,6 +143,7 @@ export namespace kairo::foundation::raytracer
             {
                 film = rerender();
                 bytes = ToSRGBBytes(film);
+                uploadTexture();
                 SavePPM(film, options.SavePath);
                 std::cout << "Re-rendered and saved " << options.SavePath << "\n";
             }
@@ -137,24 +164,30 @@ export namespace kairo::foundation::raytracer
             glMatrixMode(GL_MODELVIEW);
             glLoadIdentity();
 
-            const float scaleX =
-                static_cast<float>(width) / static_cast<float>(film.Width());
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glColor3f(1.0f, 1.0f, 1.0f);
 
-            const float scaleY =
-                static_cast<float>(height) / static_cast<float>(film.Height());
+            glBegin(GL_QUADS);
+            glTexCoord2f(0.0f, 0.0f);
+            glVertex2f(0.0f, 0.0f);
 
-            glRasterPos2i(0, static_cast<int>(film.Height()));
-            glPixelZoom(scaleX, -scaleY);
-            glDrawPixels(
-                static_cast<GLsizei>(film.Width()),
-                static_cast<GLsizei>(film.Height()),
-                GL_RGB,
-                GL_UNSIGNED_BYTE,
-                bytes.data());
+            glTexCoord2f(1.0f, 0.0f);
+            glVertex2f(static_cast<float>(width), 0.0f);
+
+            glTexCoord2f(1.0f, 1.0f);
+            glVertex2f(static_cast<float>(width), static_cast<float>(height));
+
+            glTexCoord2f(0.0f, 1.0f);
+            glVertex2f(0.0f, static_cast<float>(height));
+            glEnd();
+
+            glDisable(GL_TEXTURE_2D);
 
             glfwSwapBuffers(window);
         }
 
+        glDeleteTextures(1, &texture);
         glfwDestroyWindow(window);
         glfwTerminate();
     }

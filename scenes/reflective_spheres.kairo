@@ -9,8 +9,8 @@ material blue lambert 0.12 0.35 0.88
 material gold lambert 0.95 0.65 0.18
 material mirror mirror 0.92 0.95 1.00
 
-light point -2.5 4.2 2.4 1.0 0.92 0.82 12.0
-light point 3.2 2.8 1.6 0.45 0.65 1.0 3.0
+light point -2.5 4.2 2.4 1.0 0.92 0.82 22.0
+light point 3.2 2.8 1.6 0.45 0.65 1.0 6.0
 
 triangle -5 0 -5  5 0 -5  5 0 5 floor
 triangle -5 0 -5  5 0 5  -5 0 5 floor

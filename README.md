@@ -34,6 +34,16 @@ brew install glfw
 open outputs/beauty.ppm
 ```
 
+Do not run image paths directly:
+
+```bash
+outputs/beauty.ppm      # wrong: the shell tries to execute the image
+open outputs/beauty.ppm # correct: opens the image in Preview
+```
+
+Lines beginning with `#` in README examples are comments, not commands to paste
+after the command prompt.
+
 Debug modes:
 
 ```bash

@@ -74,7 +74,7 @@ export namespace kairo::foundation::raytracer
         }
 
         Color3f color =
-            material.Albedo * 0.035f;
+            material.Albedo * 0.10f;
 
         for (const PointLight& light : scene.Lights)
         {
@@ -116,7 +116,7 @@ export namespace kairo::foundation::raytracer
             }
 
             const float attenuation =
-                light.Intensity / std::max(lightDistance * lightDistance, 1.0f);
+                light.Intensity / std::max(lightDistance * lightDistance, 0.35f);
 
             color +=
                 material.Albedo *
