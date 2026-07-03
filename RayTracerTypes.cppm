@@ -33,7 +33,8 @@ export namespace kairo::foundation::raytracer
         UV,
         Barycentric,
         AccelerationDifference,
-        PBR
+        PBR,
+        Path
     };
 
     // RenderSettings is the small contract between scene parsing, command-line
@@ -175,6 +176,7 @@ export namespace kairo::foundation::raytracer
         case RenderMode::Barycentric: return "barycentric";
         case RenderMode::AccelerationDifference: return "accel_diff";
         case RenderMode::PBR: return "pbr";
+        case RenderMode::Path: return "path";
         }
 
         return "unknown";

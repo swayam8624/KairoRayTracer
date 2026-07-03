@@ -231,6 +231,7 @@ export namespace kairo::foundation::raytracer
             if (token.Text == "barycentric") return RenderMode::Barycentric;
             if (token.Text == "accel_diff") return RenderMode::AccelerationDifference;
             if (token.Text == "pbr") return RenderMode::PBR;
+            if (token.Text == "path") return RenderMode::Path;
 
             Fail(line, token.Column, "unknown integrator `" + token.Text + "`.");
         }

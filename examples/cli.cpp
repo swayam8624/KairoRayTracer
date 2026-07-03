@@ -18,7 +18,7 @@ namespace
     void PrintUsage()
     {
         std::cout
-            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|pbr|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--output path] [--width px --height px] [--samples n] [--threads n]\n";
+            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--output path] [--width px --height px] [--samples n] [--threads n]\n";
     }
 }
 

@@ -19,6 +19,7 @@ import Kairo.Foundation.RayTracer.NormalIntegrator;
 import Kairo.Foundation.RayTracer.DepthIntegrator;
 import Kairo.Foundation.RayTracer.WhittedIntegrator;
 import Kairo.Foundation.RayTracer.PBRIntegrator;
+import Kairo.Foundation.RayTracer.PathIntegrator;
 
 export namespace kairo::foundation::raytracer
 {
@@ -104,7 +105,14 @@ export namespace kairo::foundation::raytracer
                             scene.MainCamera.GenerateRay(u, v);
 
                         ++localStats.PrimaryRays;
-                        accumulated += Trace(scene, ray, &localStats);
+                        accumulated +=
+                            Trace(
+                                scene,
+                                ray,
+                                x,
+                                y,
+                                sample,
+                                &localStats);
                     }
 
                     film.SetPixel(
@@ -188,6 +196,9 @@ export namespace kairo::foundation::raytracer
         static Color3f Trace(
             const Scene& scene,
             const Rayf& ray,
+            std::uint32_t x,
+            std::uint32_t y,
+            std::uint32_t sample,
             RenderStats* stats)
         {
             switch (scene.Settings.Mode)
@@ -200,6 +211,16 @@ export namespace kairo::foundation::raytracer
                 return TraceWhitted(scene, ray, 0, stats);
             case RenderMode::PBR:
                 return TracePBRDirect(scene, ray, stats);
+            case RenderMode::Path:
+            {
+                std::uint32_t rng =
+                    x * 73856093u ^
+                    y * 19349663u ^
+                    sample * 83492791u ^
+                    0x9e3779b9u;
+
+                return TracePath(scene, ray, 0, rng, stats);
+            }
             case RenderMode::ShadowMask:
                 return TraceShadowMask(scene, ray, stats);
             case RenderMode::BVHHeatmap:

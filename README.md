@@ -149,6 +149,7 @@ scenes/parser_reference.kairo
 scenes/glass_refraction.kairo
 scenes/mesh_showcase.kairo
 scenes/pbr_showcase.kairo
+scenes/path_showcase.kairo
 ```
 
 Scene purpose:
@@ -166,6 +167,7 @@ parser_reference.kairo   compact reference for every V1 scene command
 glass_refraction.kairo   glass material and Schlick Fresnel/refraction test
 mesh_showcase.kairo      OBJ mesh loading converted into triangle primitives
 pbr_showcase.kairo       Cook-Torrance/GGX direct lighting demo
+path_showcase.kairo      stochastic cosine-hemisphere path tracing demo
 ```
 
 Render every main debug output for the default scene:

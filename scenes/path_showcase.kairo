@@ -1,0 +1,29 @@
+# Path tracing showcase
+# Purpose:
+# - Exercises stochastic cosine-hemisphere bounces.
+# - Increase samples for cleaner output: --samples 32 or --samples 64.
+resolution 640 420
+samples 16
+background 0.015 0.02 0.035
+integrator path
+camera 0 1.65 5.8 0 0.95 0 0 1 0 40
+
+material floor lambert 0.62 0.62 0.60
+material red lambert 0.85 0.12 0.08
+material blue lambert 0.10 0.25 0.90
+material white lambert 0.78 0.76 0.70
+material lamp emissive 1.0 0.88 0.65 6.0 5.0 3.5
+
+light point 0 2.7 1.2 1.0 0.88 0.70 8.0
+
+triangle -2 0 -2  2 0 -2  2 0 2 floor
+triangle -2 0 -2  2 0 2  -2 0 2 floor
+triangle -2 0 -2  -2 0 2  -2 2.7 2 red
+triangle -2 0 -2  -2 2.7 2  -2 2.7 -2 red
+triangle 2 0 -2  2 2.7 -2  2 2.7 2 blue
+triangle 2 0 -2  2 2.7 2  2 0 2 blue
+triangle -2 2.7 -2  -2 2.7 2  2 2.7 2 white
+triangle -2 2.7 -2  2 2.7 2  2 2.7 -2 white
+triangle -0.45 2.68 0.35  0.45 2.68 0.35  0.0 2.68 -0.35 lamp
+sphere -0.7 0.55 0.15 0.55 white
+sphere 0.72 0.65 -0.45 0.65 white

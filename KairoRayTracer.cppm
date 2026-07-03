@@ -20,4 +20,5 @@ export import Kairo.Foundation.RayTracer.NormalIntegrator;
 export import Kairo.Foundation.RayTracer.DepthIntegrator;
 export import Kairo.Foundation.RayTracer.WhittedIntegrator;
 export import Kairo.Foundation.RayTracer.PBRIntegrator;
+export import Kairo.Foundation.RayTracer.PathIntegrator;
 export import Kairo.Foundation.RayTracer.Renderer;
