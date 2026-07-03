@@ -1,4 +1,5 @@
 build/
+build-headless/
 cmake-build-*/
 .DS_Store
 

@@ -12,6 +12,9 @@ V1 intentionally avoids ImGui, Vulkan, Metal, JSON, PNG, OBJ, and path tracing.
 It loads `.kairo` scene files, renders on the CPU, saves PPM images, and can show
 the completed render in a small GLFW/OpenGL preview window.
 
+The core library is CLI/headless friendly. GLFW and OpenGL are required only
+when `KAIRO_RAYTRACER_BUILD_PREVIEW=ON`.
+
 ## How To Read This Project
 
 Read the code in this order if you want to master the concepts:
@@ -52,6 +55,13 @@ cd /Users/swayamsingal/Desktop/Programming/Kairo/KairoRayTracer
 cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++
 cmake --build build
 ctest --test-dir build --output-on-failure
+```
+
+Headless CLI-only build:
+
+```bash
+cmake -S . -B build-headless -G Ninja -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DKAIRO_RAYTRACER_BUILD_PREVIEW=OFF
+cmake --build build-headless
 ```
 
 If the preview target cannot find GLFW:
@@ -118,6 +128,8 @@ light point x y z r g b intensity
 sphere x y z radius materialName
 triangle ax ay az bx by bz cx cy cz materialName
 ```
+
+V1 requires materials to be declared before primitives that reference them.
 
 Example scenes:
 

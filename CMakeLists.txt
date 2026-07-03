@@ -46,17 +46,6 @@ if(NOT TARGET KairoSpatial)
     endif()
 endif()
 
-find_package(OpenGL REQUIRED)
-find_path(GLFW_INCLUDE_DIR GLFW/glfw3.h PATHS /opt/homebrew/include /usr/local/include)
-find_library(GLFW_LIBRARY glfw PATHS /opt/homebrew/lib /usr/local/lib)
-
-# GLFW/OpenGL are linked to the library because PreviewWindow is exported as a
-# module. CLI users still do not create a window unless they run the preview
-# executable.
-if(NOT GLFW_INCLUDE_DIR OR NOT GLFW_LIBRARY)
-    message(FATAL_ERROR "GLFW was not found. Install it with: brew install glfw")
-endif()
-
 add_library(KairoRayTracer)
 
 # C++23 module file set. Keep this list ordered roughly from leaf concepts to
@@ -76,25 +65,39 @@ target_sources(KairoRayTracer
             Primitive.cppm
             Scene.cppm
             SceneParser.cppm
+            Sampler.cppm
             Integrator.cppm
             NormalIntegrator.cppm
             DepthIntegrator.cppm
             WhittedIntegrator.cppm
             Renderer.cppm
-            PreviewWindow.cppm
             KairoRayTracer.cppm
 )
 
 target_link_libraries(KairoRayTracer PUBLIC KairoSpatial)
-target_include_directories(KairoRayTracer PUBLIC ${GLFW_INCLUDE_DIR})
-target_link_libraries(KairoRayTracer PUBLIC ${GLFW_LIBRARY} OpenGL::GL)
 
 add_executable(KairoRayTracerCLI examples/cli.cpp)
 target_link_libraries(KairoRayTracerCLI PRIVATE KairoRayTracer)
 
 if(KAIRO_RAYTRACER_BUILD_PREVIEW)
+    find_package(OpenGL REQUIRED)
+    find_path(GLFW_INCLUDE_DIR GLFW/glfw3.h PATHS /opt/homebrew/include /usr/local/include)
+    find_library(GLFW_LIBRARY glfw PATHS /opt/homebrew/lib /usr/local/lib)
+
+    if(NOT GLFW_INCLUDE_DIR OR NOT GLFW_LIBRARY)
+        message(FATAL_ERROR "GLFW was not found. Install it with: brew install glfw")
+    endif()
+
     add_executable(KairoRayTracerPreview examples/preview.cpp)
-    target_link_libraries(KairoRayTracerPreview PRIVATE KairoRayTracer)
+    target_sources(KairoRayTracerPreview
+        PRIVATE
+            FILE_SET CXX_MODULES
+            BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+            FILES
+                PreviewWindow.cppm
+    )
+    target_include_directories(KairoRayTracerPreview PRIVATE ${GLFW_INCLUDE_DIR})
+    target_link_libraries(KairoRayTracerPreview PRIVATE KairoRayTracer ${GLFW_LIBRARY} OpenGL::GL)
 endif()
 
 if(KAIRO_RAYTRACER_BUILD_TESTS)

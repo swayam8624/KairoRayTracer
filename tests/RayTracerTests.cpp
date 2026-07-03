@@ -132,6 +132,56 @@ TEST_CASE("Scene BVH intersection matches brute force", "[RayTracer][Scene]")
     REQUIRE(bruteHit.has_value());
     REQUIRE(bvhHit->PrimitiveIndex == bruteHit->PrimitiveIndex);
     REQUIRE(bvhHit->Distance == Catch::Approx(bruteHit->Distance).margin(1.0e-5f));
+    REQUIRE(bvhHit->MaterialIndex == bruteHit->MaterialIndex);
+    REQUIRE(bvhHit->UV.x == Catch::Approx(bruteHit->UV.x).margin(1.0e-5f));
+    REQUIRE(bvhHit->UV.y == Catch::Approx(bruteHit->UV.y).margin(1.0e-5f));
+}
+
+TEST_CASE("BVH preserves triangle barycentric UV data", "[RayTracer][Scene]")
+{
+    const Scene scene =
+        ParseSceneText(R"(
+resolution 32 32
+samples 1
+background 0 0 0
+integrator normal
+camera 0 0 3 0 0 0 0 1 0 45
+material tri lambert 1 1 1
+triangle -1 -1 0  1 -1 0  0 1 0 tri
+)");
+
+    const Rayf ray =
+        Rayf::FromOriginDirection(
+            Vec3f{ 0.0f, 0.0f, 3.0f },
+            Vec3f{ 0.0f, 0.0f, -1.0f });
+
+    const auto bvhHit =
+        scene.Intersect(ray);
+
+    const auto bruteHit =
+        scene.BruteForceIntersect(ray);
+
+    REQUIRE(bvhHit.has_value());
+    REQUIRE(bruteHit.has_value());
+    REQUIRE(bvhHit->UV.x == Catch::Approx(bruteHit->UV.x).margin(1.0e-5f));
+    REQUIRE(bvhHit->UV.y == Catch::Approx(bruteHit->UV.y).margin(1.0e-5f));
+    REQUIRE(bvhHit->UV.x > 0.0f);
+    REQUIRE(bvhHit->UV.y > 0.0f);
+}
+
+TEST_CASE("Stratified sampler does not duplicate center rays", "[RayTracer][Sampler]")
+{
+    const PixelSample a =
+        StratifiedPixelSample(4, 7, 0, 4);
+
+    const PixelSample b =
+        StratifiedPixelSample(4, 7, 1, 4);
+
+    REQUIRE(a.dx >= 0.0f);
+    REQUIRE(a.dx < 1.0f);
+    REQUIRE(a.dy >= 0.0f);
+    REQUIRE(a.dy < 1.0f);
+    REQUIRE((a.dx != b.dx || a.dy != b.dy));
 }
 
 TEST_CASE("Scene shadow occlusion distinguishes blocker and empty direction", "[RayTracer][Scene]")

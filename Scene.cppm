@@ -194,16 +194,13 @@ export namespace kairo::foundation::raytracer
             const std::uint32_t primitiveIndex =
                 result.Closest.PrimitiveIndex;
 
-            return SurfaceHit
-            {
-                true,
-                result.Closest.Distance,
-                result.Closest.Position,
-                result.Closest.Normal,
-                Vec2f::Zero(),
-                primitiveIndex,
-                MaterialIndex(Primitives.at(primitiveIndex))
-            };
+            // Recompute the exact render hit after BVH traversal has identified
+            // the nearest primitive. This preserves renderer-only data such as
+            // triangle barycentric UVs that SpatialRayHit does not store.
+            return raytracer::Intersect(
+                Primitives.at(primitiveIndex),
+                ray,
+                primitiveIndex);
         }
 
         [[nodiscard]]

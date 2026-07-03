@@ -2,6 +2,8 @@ module;
 
 #include <chrono>
 #include <cstdint>
+#include <thread>
+#include <vector>
 
 export module Kairo.Foundation.RayTracer.Renderer;
 
@@ -10,6 +12,7 @@ import Kairo.Foundation.RayTracer.Color;
 import Kairo.Foundation.RayTracer.Types;
 import Kairo.Foundation.RayTracer.Film;
 import Kairo.Foundation.RayTracer.Scene;
+import Kairo.Foundation.RayTracer.Sampler;
 import Kairo.Foundation.RayTracer.NormalIntegrator;
 import Kairo.Foundation.RayTracer.DepthIntegrator;
 import Kairo.Foundation.RayTracer.WhittedIntegrator;
@@ -49,20 +52,23 @@ export namespace kairo::foundation::raytracer
             {
                 for (std::uint32_t x = 0; x < scene.Settings.Width; ++x)
                 {
-                    // V1 uses deterministic center samples. The sample loop is
-                    // already shaped for future jittered sampling/anti-aliasing.
                     Color3f accumulated = Color3f::Black();
 
                     for (std::uint32_t sample = 0; sample < scene.Settings.SamplesPerPixel; ++sample)
                     {
-                        (void)sample;
+                        const PixelSample pixelSample =
+                            StratifiedPixelSample(
+                                x,
+                                y,
+                                sample,
+                                scene.Settings.SamplesPerPixel);
 
                         const float u =
-                            (static_cast<float>(x) + 0.5f) /
+                            (static_cast<float>(x) + pixelSample.dx) /
                             static_cast<float>(scene.Settings.Width);
 
                         const float v =
-                            (static_cast<float>(y) + 0.5f) /
+                            (static_cast<float>(y) + pixelSample.dy) /
                             static_cast<float>(scene.Settings.Height);
 
                         const Rayf ray =

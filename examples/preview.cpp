@@ -4,6 +4,7 @@
 #include <string>
 
 import Kairo.Foundation.RayTracer;
+import Kairo.Foundation.RayTracer.PreviewWindow;
 
 using namespace kairo::foundation::raytracer;
 
