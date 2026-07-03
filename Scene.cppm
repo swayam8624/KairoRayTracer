@@ -112,6 +112,12 @@ export namespace kairo::foundation::raytracer
 
         void BuildAcceleration()
         {
+            if (Settings.Acceleration == AccelerationMode::BruteForce)
+            {
+                m_BVH = spatial::BVH{};
+                return;
+            }
+
             // SpatialPrimitive is intentionally simpler than a render primitive:
             // it only needs identity, bounds, and a layer mask. UserID/UserIndex
             // both map back to Primitives[i] in V1.
@@ -131,7 +137,8 @@ export namespace kairo::foundation::raytracer
 
             spatial::BVHBuildSettings settings;
             settings.MaxLeafSize = 4;
-            settings.UseSAH = true;
+            settings.UseSAH = Settings.Acceleration == AccelerationMode::BVHSAH;
+            settings.UseMortonOrdering = Settings.Acceleration == AccelerationMode::BVHMorton;
             m_BVH = spatial::BuildBVH(spatialPrimitives, settings);
         }
 
@@ -148,9 +155,9 @@ export namespace kairo::foundation::raytracer
                 return std::nullopt;
             }
 
-            if (m_BVH.Empty())
+            if (Settings.Acceleration == AccelerationMode::BruteForce || m_BVH.Empty())
             {
-                return BruteForceIntersect(ray);
+                return BruteForceIntersect(ray, stats);
             }
 
             const spatial::SpatialRaycastResult result =
@@ -206,7 +213,8 @@ export namespace kairo::foundation::raytracer
 
         [[nodiscard]]
         std::optional<SurfaceHit> BruteForceIntersect(
-            const Rayf& ray) const
+            const Rayf& ray,
+            RenderStats* stats = nullptr) const
         {
             // Brute force is kept as a correctness oracle. Tests compare it
             // against BVH traversal so acceleration can change without silently
@@ -217,6 +225,11 @@ export namespace kairo::foundation::raytracer
 
             for (std::uint32_t i = 0; i < Primitives.size(); ++i)
             {
+                if (stats)
+                {
+                    ++stats->BVHTestedPrimitives;
+                }
+
                 const std::optional<SurfaceHit> hit =
                     raytracer::Intersect(Primitives[i], ray, i);
 
@@ -244,10 +257,15 @@ export namespace kairo::foundation::raytracer
                 return false;
             }
 
-            if (m_BVH.Empty())
+            if (Settings.Acceleration == AccelerationMode::BruteForce || m_BVH.Empty())
             {
                 for (std::uint32_t i = 0; i < Primitives.size(); ++i)
                 {
+                    if (stats)
+                    {
+                        ++stats->BVHTestedPrimitives;
+                    }
+
                     const std::optional<SurfaceHit> hit =
                         raytracer::Intersect(Primitives[i], ray, i);
 

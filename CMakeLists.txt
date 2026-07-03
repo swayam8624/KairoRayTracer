@@ -118,4 +118,28 @@ if(KAIRO_RAYTRACER_BUILD_TESTS)
 
     enable_testing()
     add_test(NAME KairoRayTracerTests COMMAND KairoRayTracerTests)
+
+    add_test(
+        NAME KairoRayTracerCLIRejectsZeroWidth
+        COMMAND KairoRayTracerCLI
+            ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo
+            --width 0
+    )
+    set_tests_properties(KairoRayTracerCLIRejectsZeroWidth PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+        NAME KairoRayTracerCLIRejectsNegativeSamples
+        COMMAND KairoRayTracerCLI
+            ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo
+            --samples -1
+    )
+    set_tests_properties(KairoRayTracerCLIRejectsNegativeSamples PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+        NAME KairoRayTracerCLIRejectsNonNumericThreads
+        COMMAND KairoRayTracerCLI
+            ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo
+            --threads nope
+    )
+    set_tests_properties(KairoRayTracerCLIRejectsNonNumericThreads PROPERTIES WILL_FAIL TRUE)
 endif()

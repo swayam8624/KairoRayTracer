@@ -33,6 +33,17 @@ export namespace kairo::foundation::raytracer
     }
 
     [[nodiscard]]
+    inline AccelerationMode AccelerationModeFromString(
+        const std::string& value)
+    {
+        if (value == "brute") return AccelerationMode::BruteForce;
+        if (value == "sah") return AccelerationMode::BVHSAH;
+        if (value == "morton") return AccelerationMode::BVHMorton;
+
+        throw std::invalid_argument("Unknown acceleration mode: " + value);
+    }
+
+    [[nodiscard]]
     inline const char* OutputNameForMode(
         RenderMode mode) noexcept
     {

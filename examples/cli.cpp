@@ -1,5 +1,8 @@
 #include <filesystem>
 #include <iostream>
+#include <charconv>
+#include <cstdint>
+#include <stdexcept>
 #include <string>
 
 import Kairo.Foundation.RayTracer;
@@ -18,7 +21,36 @@ namespace
     void PrintUsage()
     {
         std::cout
-            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--output path] [--stats path.csv] [--width px --height px] [--samples n] [--threads n]\n";
+            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--accel brute|sah|morton] [--output path] [--stats path.csv] [--width px --height px] [--samples n] [--threads n]\n";
+    }
+
+    std::uint32_t ParseU32(
+        const std::string& text,
+        const std::string& name,
+        bool allowZero = false)
+    {
+        if (text.empty() || text.front() == '-')
+        {
+            throw std::invalid_argument(name + " must be a non-negative integer.");
+        }
+
+        std::uint32_t value = 0;
+        const char* begin = text.data();
+        const char* end = text.data() + text.size();
+        const std::from_chars_result result =
+            std::from_chars(begin, end, value);
+
+        if (result.ec != std::errc{} || result.ptr != end)
+        {
+            throw std::invalid_argument(name + " must be a valid unsigned integer.");
+        }
+
+        if (!allowZero && value == 0)
+        {
+            throw std::invalid_argument(name + " must be greater than zero.");
+        }
+
+        return value;
     }
 }
 
@@ -44,6 +76,7 @@ int main(
             std::filesystem::path("outputs") / OutputNameForMode(scene.Settings.Mode);
 
         std::filesystem::path statsPath;
+        bool rebuildAcceleration = false;
 
         for (int i = 2; i < argc; ++i)
         {
@@ -60,6 +93,12 @@ int main(
                 outputPath =
                     std::filesystem::path("outputs") / OutputNameForMode(scene.Settings.Mode);
             }
+            else if (arg == "--accel" && i + 1 < argc)
+            {
+                scene.Settings.Acceleration =
+                    AccelerationModeFromString(argv[++i]);
+                rebuildAcceleration = true;
+            }
             else if (arg == "--output" && i + 1 < argc)
             {
                 outputPath = argv[++i];
@@ -71,7 +110,7 @@ int main(
             else if (arg == "--width" && i + 1 < argc)
             {
                 scene.Settings.Width =
-                    static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                    ParseU32(argv[++i], "width");
                 scene.MainCamera.AspectRatio =
                     static_cast<float>(scene.Settings.Width) /
                     static_cast<float>(scene.Settings.Height);
@@ -79,7 +118,7 @@ int main(
             else if (arg == "--height" && i + 1 < argc)
             {
                 scene.Settings.Height =
-                    static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                    ParseU32(argv[++i], "height");
                 scene.MainCamera.AspectRatio =
                     static_cast<float>(scene.Settings.Width) /
                     static_cast<float>(scene.Settings.Height);
@@ -87,12 +126,12 @@ int main(
             else if (arg == "--samples" && i + 1 < argc)
             {
                 scene.Settings.SamplesPerPixel =
-                    static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                    ParseU32(argv[++i], "samples");
             }
             else if (arg == "--threads" && i + 1 < argc)
             {
                 scene.Settings.ThreadCount =
-                    static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                    ParseU32(argv[++i], "threads", true);
             }
             else
             {
@@ -101,9 +140,15 @@ int main(
             }
         }
 
+        if (rebuildAcceleration)
+        {
+            scene.BuildAcceleration();
+        }
+
         std::cout << "Rendering "
                   << scene.Settings.Width << "x" << scene.Settings.Height
                   << " mode=" << ToString(scene.Settings.Mode)
+                  << " accel=" << ToString(scene.Settings.Acceleration)
                   << " scene=" << scenePath << "...\n";
 
         const RenderResult result =

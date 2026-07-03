@@ -224,6 +224,32 @@ TEST_CASE("Renderer produces non-black Whitted image", "[RayTracer][Renderer]")
     REQUIRE(result.Stats.PrimaryRays == 32u * 24u);
 }
 
+TEST_CASE("Renderer rejects invalid render settings", "[RayTracer][Renderer]")
+{
+    auto requireInvalid =
+        [](auto mutate)
+        {
+            Scene scene =
+                ParseSceneText(MinimalSceneText());
+
+            mutate(scene.Settings);
+
+            REQUIRE_THROWS_AS(Renderer{}.Render(scene), std::invalid_argument);
+        };
+
+    requireInvalid([](RenderSettings& settings) { settings.Width = 0; });
+    requireInvalid([](RenderSettings& settings) { settings.Height = 0; });
+    requireInvalid([](RenderSettings& settings) { settings.SamplesPerPixel = 0; });
+    requireInvalid([](RenderSettings& settings) { settings.TileSize = 0; });
+    requireInvalid([](RenderSettings& settings) { settings.DepthNear = 10.0f; settings.DepthFar = 1.0f; });
+    requireInvalid([](RenderSettings& settings) { settings.Width = 32769; });
+    requireInvalid([](RenderSettings& settings) { settings.Height = 32769; });
+    requireInvalid([](RenderSettings& settings) { settings.SamplesPerPixel = 4097; });
+    requireInvalid([](RenderSettings& settings) { settings.TileSize = 4097; });
+    requireInvalid([](RenderSettings& settings) { settings.MaxDepth = 65; });
+    requireInvalid([](RenderSettings& settings) { settings.ThreadCount = 1025; });
+}
+
 TEST_CASE("PPM writer emits valid header", "[RayTracer][ImageIO]")
 {
     Film film(2, 1);

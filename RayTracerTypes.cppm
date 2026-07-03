@@ -2,6 +2,7 @@ module;
 
 #include <cstdint>
 #include <limits>
+#include <stdexcept>
 #include <string>
 
 export module Kairo.Foundation.RayTracer.Types;
@@ -37,6 +38,13 @@ export namespace kairo::foundation::raytracer
         Path
     };
 
+    enum class AccelerationMode : std::uint8_t
+    {
+        BruteForce,
+        BVHSAH,
+        BVHMorton
+    };
+
     // RenderSettings is the small contract between scene parsing, command-line
     // overrides, and the renderer. Keep it plain-data so tests and examples can
     // construct scenes without hidden ownership or services.
@@ -54,8 +62,66 @@ export namespace kairo::foundation::raytracer
         float RayBiasRelative = 1.0e-4f;
         float MinimumLightDistanceSquared = 0.35f;
         RenderMode Mode = RenderMode::Whitted;
+        AccelerationMode Acceleration = AccelerationMode::BVHSAH;
         Color3f Background = { 0.02f, 0.03f, 0.05f };
     };
+
+    /// Input: render settings from parser, CLI overrides, or direct test setup.
+    /// Output: throws std::invalid_argument when a value is unsafe for rendering.
+    /// Task: protect Renderer::Render from plain-data settings that bypass parser validation.
+    inline void ValidateRenderSettings(
+        const RenderSettings& settings)
+    {
+        if (settings.Width == 0)
+        {
+            throw std::invalid_argument("Render width must be greater than zero.");
+        }
+
+        if (settings.Height == 0)
+        {
+            throw std::invalid_argument("Render height must be greater than zero.");
+        }
+
+        if (settings.SamplesPerPixel == 0)
+        {
+            throw std::invalid_argument("SamplesPerPixel must be greater than zero.");
+        }
+
+        if (settings.TileSize == 0)
+        {
+            throw std::invalid_argument("TileSize must be greater than zero.");
+        }
+
+        if (settings.DepthFar <= settings.DepthNear)
+        {
+            throw std::invalid_argument("DepthFar must be greater than DepthNear.");
+        }
+
+        if (settings.Width > 32768u || settings.Height > 32768u)
+        {
+            throw std::invalid_argument("Render dimensions are too large; maximum supported width/height is 32768.");
+        }
+
+        if (settings.SamplesPerPixel > 4096u)
+        {
+            throw std::invalid_argument("SamplesPerPixel is too large; maximum supported value is 4096.");
+        }
+
+        if (settings.TileSize > 4096u)
+        {
+            throw std::invalid_argument("TileSize is too large; maximum supported value is 4096.");
+        }
+
+        if (settings.MaxDepth > 64u)
+        {
+            throw std::invalid_argument("MaxDepth is too large; maximum supported value is 64.");
+        }
+
+        if (settings.ThreadCount > 1024u)
+        {
+            throw std::invalid_argument("ThreadCount is too large; maximum supported value is 1024.");
+        }
+    }
 
     // RenderStats is intentionally approximate and cheap. It is not a profiler;
     // it is a sanity view that answers: did rays fire, did the BVH traverse, and
@@ -134,6 +200,20 @@ export namespace kairo::foundation::raytracer
         return settings.RayBiasAbsolute > relative
             ? settings.RayBiasAbsolute
             : relative;
+    }
+
+    [[nodiscard]]
+    inline const char* ToString(
+        AccelerationMode mode) noexcept
+    {
+        switch (mode)
+        {
+        case AccelerationMode::BruteForce: return "brute";
+        case AccelerationMode::BVHSAH: return "sah";
+        case AccelerationMode::BVHMorton: return "morton";
+        }
+
+        return "unknown";
     }
 
     // SurfaceHit is richer than SpatialRayHit because shading needs material,

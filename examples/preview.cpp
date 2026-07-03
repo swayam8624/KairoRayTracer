@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <charconv>
+#include <cstdint>
 #include <cmath>
 #include <filesystem>
 #include <iostream>
@@ -24,6 +26,34 @@ namespace
     {
         std::cout
             << "Usage: KairoRayTracerPreview <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--width px --height px] [--samples n]\n";
+    }
+
+    std::uint32_t ParseU32(
+        const std::string& text,
+        const std::string& name)
+    {
+        if (text.empty() || text.front() == '-')
+        {
+            throw std::invalid_argument(name + " must be a non-negative integer.");
+        }
+
+        std::uint32_t value = 0;
+        const char* begin = text.data();
+        const char* end = text.data() + text.size();
+        const std::from_chars_result result =
+            std::from_chars(begin, end, value);
+
+        if (result.ec != std::errc{} || result.ptr != end)
+        {
+            throw std::invalid_argument(name + " must be a valid unsigned integer.");
+        }
+
+        if (value == 0)
+        {
+            throw std::invalid_argument(name + " must be greater than zero.");
+        }
+
+        return value;
     }
 
     struct CameraOrbitState final
@@ -120,15 +150,15 @@ int main(
             }
             else if (arg == "--width" && i + 1 < argc)
             {
-                widthOverride = static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                widthOverride = ParseU32(argv[++i], "width");
             }
             else if (arg == "--height" && i + 1 < argc)
             {
-                heightOverride = static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                heightOverride = ParseU32(argv[++i], "height");
             }
             else if (arg == "--samples" && i + 1 < argc)
             {
-                samplesOverride = static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                samplesOverride = ParseU32(argv[++i], "samples");
             }
             else
             {

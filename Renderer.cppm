@@ -46,6 +46,8 @@ export namespace kairo::foundation::raytracer
         RenderResult Render(
             const Scene& scene) const
         {
+            ValidateRenderSettings(scene.Settings);
+
             Film film(scene.Settings.Width, scene.Settings.Height);
             RenderStats stats;
 
@@ -53,7 +55,7 @@ export namespace kairo::foundation::raytracer
                 std::chrono::steady_clock::now();
 
             const std::uint32_t tileSize =
-                scene.Settings.TileSize == 0 ? 16u : scene.Settings.TileSize;
+                scene.Settings.TileSize;
 
             const std::uint32_t tilesX =
                 (scene.Settings.Width + tileSize - 1u) / tileSize;
