@@ -270,6 +270,36 @@ TEST_CASE("PNG writer emits valid signature", "[RayTracer][ImageIO]")
     REQUIRE(signature[3] == 'G');
 }
 
+TEST_CASE("Stats writer emits benchmark CSV", "[RayTracer][ImageIO]")
+{
+    RenderStats stats;
+    stats.PrimaryRays = 10;
+    stats.ShadowRays = 5;
+    stats.ReflectionRays = 1;
+    stats.HitCount = 8;
+    stats.MissCount = 2;
+    stats.BVHVisitedNodes = 30;
+    stats.BVHTestedPrimitives = 12;
+    stats.MaxRecursionDepthReached = 2;
+    stats.RenderMilliseconds = 4.0;
+    FinalizeDerivedStats(stats);
+
+    const std::filesystem::path outputPath =
+        std::filesystem::temp_directory_path() / "kairo_raytracer_stats.csv";
+
+    SaveStatsCSV(stats, outputPath);
+
+    std::ifstream in(outputPath);
+    std::string header;
+    std::string row;
+    std::getline(in, header);
+    std::getline(in, row);
+
+    REQUIRE(header.find("primary_rays") != std::string::npos);
+    REQUIRE(header.find("rays_per_second") != std::string::npos);
+    REQUIRE(row.find("10,5,1,16") != std::string::npos);
+}
+
 TEST_CASE("Renderer supports resized threaded output", "[RayTracer][Renderer]")
 {
     Scene scene =

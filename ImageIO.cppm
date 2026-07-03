@@ -14,6 +14,7 @@ export module Kairo.Foundation.RayTracer.ImageIO;
 
 import Kairo.Foundation.RayTracer.Color;
 import Kairo.Foundation.RayTracer.Film;
+import Kairo.Foundation.RayTracer.Types;
 
 export namespace kairo::foundation::raytracer
 {
@@ -247,5 +248,45 @@ export namespace kairo::foundation::raytracer
         }
 
         SavePPM(film, path);
+    }
+
+    /// Input: render statistics and destination CSV path.
+    /// Output: one-header, one-row CSV file on disk.
+    /// Task: make performance comparisons reproducible across resolutions,
+    /// samples, modes, and future acceleration experiments.
+    inline void SaveStatsCSV(
+        const RenderStats& stats,
+        const std::filesystem::path& path)
+    {
+        if (path.has_parent_path())
+        {
+            std::filesystem::create_directories(path.parent_path());
+        }
+
+        std::ofstream out(path);
+        if (!out)
+        {
+            throw std::runtime_error("Failed to open stats CSV path: " + path.string());
+        }
+
+        out
+            << "primary_rays,shadow_rays,reflection_rays,total_rays,hits,misses,"
+            << "bvh_nodes_visited,bvh_primitives_tested,max_recursion_depth,"
+            << "render_ms,rays_per_second,primitive_tests_per_ray,nodes_visited_per_ray\n";
+
+        out
+            << stats.PrimaryRays << ','
+            << stats.ShadowRays << ','
+            << stats.ReflectionRays << ','
+            << TotalRays(stats) << ','
+            << stats.HitCount << ','
+            << stats.MissCount << ','
+            << stats.BVHVisitedNodes << ','
+            << stats.BVHTestedPrimitives << ','
+            << stats.MaxRecursionDepthReached << ','
+            << stats.RenderMilliseconds << ','
+            << stats.RaysPerSecond << ','
+            << stats.PrimitiveTestsPerRay << ','
+            << stats.NodesVisitedPerRay << '\n';
     }
 }

@@ -8,9 +8,11 @@ together:
 KairoMath -> KairoGeometry -> KairoSpatial -> rendered image
 ```
 
-V1 intentionally avoids ImGui, Vulkan, Metal, JSON, PNG, OBJ, and path tracing.
-It loads `.kairo` scene files, renders on the CPU, saves PPM images, and can show
-the completed render in a small GLFW/OpenGL preview window.
+The project started as a strict V1 offline renderer and now includes the first
+V2-V4 upgrades: PNG output, threaded tiles, area lights, OBJ mesh loading, glass,
+PBR direct lighting, and a small path tracer. It still intentionally avoids
+ImGui, Vulkan, Metal, and JSON so the CPU renderer and `.kairo` scene DSL stay
+easy to inspect.
 
 The core library is CLI/headless friendly. GLFW and OpenGL are required only
 when `KAIRO_RAYTRACER_BUILD_PREVIEW=ON`.
@@ -45,7 +47,7 @@ scene file
   -> exact primitive intersection
   -> integrator shading
   -> Film
-  -> PPM file and optional preview window
+  -> PPM/PNG file and optional preview window
 ```
 
 ## Build
@@ -75,6 +77,21 @@ brew install glfw
 ```bash
 ./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --output outputs/beauty.ppm
 open outputs/beauty.ppm
+```
+
+Render at a different resolution by overriding width and height. This changes
+the actual camera aspect ratio and generates a new film, unlike resizing the
+preview window, which only scales the already-rendered texture:
+
+```bash
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --width 1280 --height 720 --output outputs/cornell_720p.png
+```
+
+Save benchmark stats next to the image when comparing modes, sample counts, or
+BVH changes:
+
+```bash
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode bvh_heatmap --width 640 --height 360 --stats outputs/cornell_stats.csv
 ```
 
 Do not run image paths directly:
@@ -108,10 +125,13 @@ Controls:
 Esc  close
 S    save current film to outputs/*.ppm
 R    reload and re-render the same scene file
+Arrow keys orbit the camera around the current focus estimate and re-render
+Q/E  zoom the orbit camera in/out and re-render
+Home reset the preview orbit
 ```
 
-The preview is only an image viewer for V1. It is not an editor and does not use
-ImGui.
+The preview is a lightweight viewer with camera inspection controls. It is not
+an editor and does not use ImGui.
 
 ## Scene Format
 
@@ -121,7 +141,7 @@ ImGui.
 resolution width height
 samples count
 background r g b
-integrator whitted|normal|depth|shadow_mask|bvh_heatmap
+integrator whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff
 camera px py pz tx ty tz upx upy upz fovDegrees
 material name lambert|mirror|emissive r g b [emitR emitG emitB]
 material name glass r g b ior
@@ -183,27 +203,36 @@ Render every main debug output for the default scene:
 ./build/KairoRayTracerCLI scenes/cornell.kairo --mode bvh_heatmap --output outputs/bvh_heatmap.ppm
 ```
 
-## V1 Features
+## Implemented Features
 
 ```text
 Sphere and triangle primitives
 Variant primitive storage
 KairoSpatial BVH acceleration
 Brute-force intersection path for tests
-Normal, depth, Whitted, shadow-mask, and BVH-heatmap render modes
-Point lights, hard shadows, emissive materials, and perfect mirror reflection
-PPM output
-Minimal GLFW preview
+Normal, depth, albedo, primitive-id, UV, barycentric, shadow-mask, acceleration-diff, and BVH-heatmap debug modes
+Whitted reflection, mirror materials, glass refraction, Schlick Fresnel
+Point lights, rectangular area lights, hard and soft shadows, emissive materials
+Cook-Torrance/GGX PBR direct lighting
+Cosine-hemisphere path tracing with Russian roulette
+Stratified anti-aliasing
+Threaded tile rendering
+PPM and PNG output
+CSV render statistics
+OBJ mesh loading
+Minimal GLFW preview with reload, save, orbit, and zoom controls
 ```
 
 ## Deferred
 
 ```text
-PNG output
-OBJ/glTF loading
 Progressive rendering
-Camera orbit controls
-PBR and path tracing
+HDR output/environment lighting
+glTF loading
+Texture image loading and filtered material textures
+Normal interpolation from mesh vertex normals
+Per-pixel traversal analytics CSV
+Multiple importance sampling
 ImGui debug/editor UI
 GPU backend
 ```

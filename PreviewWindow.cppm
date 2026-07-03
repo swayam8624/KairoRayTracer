@@ -36,6 +36,18 @@ export namespace kairo::foundation::raytracer
         std::filesystem::path SavePath = "outputs/beauty.ppm";
     };
 
+    enum class PreviewRenderRequest
+    {
+        Reload,
+        OrbitLeft,
+        OrbitRight,
+        OrbitUp,
+        OrbitDown,
+        ZoomIn,
+        ZoomOut,
+        ResetOrbit
+    };
+
     [[nodiscard]]
     inline std::vector<std::uint8_t> ToSRGBBytes(
         const Film& film)
@@ -65,7 +77,7 @@ export namespace kairo::foundation::raytracer
     inline void RunPreviewWindow(
         Film film,
         PreviewOptions options,
-        const std::function<Film()>& rerender)
+        const std::function<Film(PreviewRenderRequest)>& rerender)
     {
         // GLFW owns the OS window and OpenGL context. The CPU renderer has
         // already finished before this function starts drawing.
@@ -128,6 +140,23 @@ export namespace kairo::foundation::raytracer
 
         bool saveWasPressed = false;
         bool rerenderWasPressed = false;
+        bool leftWasPressed = false;
+        bool rightWasPressed = false;
+        bool upWasPressed = false;
+        bool downWasPressed = false;
+        bool zoomInWasPressed = false;
+        bool zoomOutWasPressed = false;
+        bool resetWasPressed = false;
+
+        auto requestRender =
+            [&](PreviewRenderRequest request)
+            {
+                film = rerender(request);
+                bytes = ToSRGBBytes(film);
+                uploadTexture();
+                SaveImage(film, options.SavePath);
+                std::cout << "Rendered and saved " << options.SavePath << "\n";
+            };
 
         while (!glfwWindowShouldClose(window))
         {
@@ -157,14 +186,68 @@ export namespace kairo::foundation::raytracer
                 // R reloads the same scene through the callback supplied by the
                 // preview executable. That keeps file watching/editor behavior
                 // out of this minimal viewer.
-                film = rerender();
-                bytes = ToSRGBBytes(film);
-                uploadTexture();
-                SaveImage(film, options.SavePath);
-                std::cout << "Re-rendered and saved " << options.SavePath << "\n";
+                requestRender(PreviewRenderRequest::Reload);
             }
 
             rerenderWasPressed = rerenderPressed;
+
+            const bool leftPressed =
+                glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS;
+            const bool rightPressed =
+                glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
+            const bool upPressed =
+                glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS;
+            const bool downPressed =
+                glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS;
+            const bool zoomInPressed =
+                glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS;
+            const bool zoomOutPressed =
+                glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS;
+            const bool resetPressed =
+                glfwGetKey(window, GLFW_KEY_HOME) == GLFW_PRESS;
+
+            if (leftPressed && !leftWasPressed)
+            {
+                requestRender(PreviewRenderRequest::OrbitLeft);
+            }
+
+            if (rightPressed && !rightWasPressed)
+            {
+                requestRender(PreviewRenderRequest::OrbitRight);
+            }
+
+            if (upPressed && !upWasPressed)
+            {
+                requestRender(PreviewRenderRequest::OrbitUp);
+            }
+
+            if (downPressed && !downWasPressed)
+            {
+                requestRender(PreviewRenderRequest::OrbitDown);
+            }
+
+            if (zoomInPressed && !zoomInWasPressed)
+            {
+                requestRender(PreviewRenderRequest::ZoomIn);
+            }
+
+            if (zoomOutPressed && !zoomOutWasPressed)
+            {
+                requestRender(PreviewRenderRequest::ZoomOut);
+            }
+
+            if (resetPressed && !resetWasPressed)
+            {
+                requestRender(PreviewRenderRequest::ResetOrbit);
+            }
+
+            leftWasPressed = leftPressed;
+            rightWasPressed = rightPressed;
+            upWasPressed = upPressed;
+            downWasPressed = downPressed;
+            zoomInWasPressed = zoomInPressed;
+            zoomOutWasPressed = zoomOutPressed;
+            resetWasPressed = resetPressed;
 
             int width = 0;
             int height = 0;

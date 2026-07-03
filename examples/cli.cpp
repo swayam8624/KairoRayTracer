@@ -18,7 +18,7 @@ namespace
     void PrintUsage()
     {
         std::cout
-            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--output path] [--width px --height px] [--samples n] [--threads n]\n";
+            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--output path] [--stats path.csv] [--width px --height px] [--samples n] [--threads n]\n";
     }
 }
 
@@ -43,6 +43,8 @@ int main(
         std::filesystem::path outputPath =
             std::filesystem::path("outputs") / OutputNameForMode(scene.Settings.Mode);
 
+        std::filesystem::path statsPath;
+
         for (int i = 2; i < argc; ++i)
         {
             // Argument parsing is intentionally tiny and explicit. This keeps V1
@@ -61,6 +63,10 @@ int main(
             else if (arg == "--output" && i + 1 < argc)
             {
                 outputPath = argv[++i];
+            }
+            else if (arg == "--stats" && i + 1 < argc)
+            {
+                statsPath = argv[++i];
             }
             else if (arg == "--width" && i + 1 < argc)
             {
@@ -107,9 +113,20 @@ int main(
         // which is why adding PNG later will not change the render loop.
         SaveImage(result.Image, outputPath);
 
+        if (!statsPath.empty())
+        {
+            SaveStatsCSV(result.Stats, statsPath);
+        }
+
         std::cout << "Done in " << result.Stats.RenderMilliseconds << " ms\n"
-                  << "Saved " << outputPath << "\n"
-                  << "primary rays = " << result.Stats.PrimaryRays << "\n"
+                  << "Saved " << outputPath << "\n";
+
+        if (!statsPath.empty())
+        {
+            std::cout << "Saved stats CSV = " << statsPath << "\n";
+        }
+
+        std::cout << "primary rays = " << result.Stats.PrimaryRays << "\n"
                   << "shadow rays = " << result.Stats.ShadowRays << "\n"
                   << "reflection rays = " << result.Stats.ReflectionRays << "\n"
                   << "hits = " << result.Stats.HitCount << "\n"

@@ -1,10 +1,14 @@
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <iostream>
+#include <numbers>
 #include <sstream>
 #include <string>
 
 import Kairo.Foundation.RayTracer;
 import Kairo.Foundation.RayTracer.PreviewWindow;
+import Kairo.Foundation.Math.Vector;
 
 using namespace kairo::foundation::raytracer;
 
@@ -20,6 +24,68 @@ namespace
     {
         std::cout
             << "Usage: KairoRayTracerPreview <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--width px --height px] [--samples n]\n";
+    }
+
+    struct CameraOrbitState final
+    {
+        float YawOffsetRadians = 0.0f;
+        float PitchOffsetRadians = 0.0f;
+        float DistanceScale = 1.0f;
+    };
+
+    void ApplyOrbitCamera(
+        Scene& scene,
+        const CameraOrbitState& orbit)
+    {
+        if (orbit.YawOffsetRadians == 0.0f &&
+            orbit.PitchOffsetRadians == 0.0f &&
+            orbit.DistanceScale == 1.0f)
+        {
+            return;
+        }
+
+        constexpr float baseFocusDistance = 5.0f;
+        const float orbitDistance =
+            baseFocusDistance * orbit.DistanceScale;
+
+        const Vec3f baseForward =
+            scene.MainCamera.Forward;
+
+        const Vec3f focus =
+            scene.MainCamera.Position + baseForward * baseFocusDistance;
+
+        const float baseYaw =
+            std::atan2(baseForward.z, baseForward.x);
+
+        const float basePitch =
+            std::asin(std::clamp(baseForward.y, -1.0f, 1.0f));
+
+        const float yaw =
+            baseYaw + orbit.YawOffsetRadians;
+
+        const float pitch =
+            std::clamp(
+                basePitch + orbit.PitchOffsetRadians,
+                -1.45f,
+                1.45f);
+
+        const float cosPitch =
+            std::cos(pitch);
+
+        const Vec3f orbitForward =
+        {
+            cosPitch * std::cos(yaw),
+            std::sin(pitch),
+            cosPitch * std::sin(yaw)
+        };
+
+        scene.MainCamera =
+            Camera::LookAt(
+                focus - orbitForward * orbitDistance,
+                focus,
+                Vec3f::Up(),
+                scene.MainCamera.VerticalFOVDegrees,
+                scene.MainCamera.AspectRatio);
     }
 }
 
@@ -42,6 +108,7 @@ int main(
         std::uint32_t widthOverride = 0;
         std::uint32_t heightOverride = 0;
         std::uint32_t samplesOverride = 0;
+        CameraOrbitState orbit;
         for (int i = 2; i < argc; ++i)
         {
             const std::string arg =
@@ -71,7 +138,7 @@ int main(
         }
 
         auto renderScene =
-            [&]() -> RenderResult
+            [&](const CameraOrbitState& cameraOrbit) -> RenderResult
             {
                 // Re-load the scene for each render so pressing R picks up file
                 // edits made in a text editor.
@@ -103,6 +170,8 @@ int main(
                     static_cast<float>(scene.Settings.Width) /
                     static_cast<float>(scene.Settings.Height);
 
+                ApplyOrbitCamera(scene, cameraOrbit);
+
                 std::cout << "Rendering preview "
                           << scene.Settings.Width << "x" << scene.Settings.Height
                           << " mode=" << ToString(scene.Settings.Mode) << "...\n";
@@ -115,7 +184,7 @@ int main(
             };
 
         RenderResult result =
-            renderScene();
+            renderScene(orbit);
 
         const std::filesystem::path savePath =
             std::filesystem::path("outputs") /
@@ -130,7 +199,7 @@ int main(
               << " - " << result.Image.Width() << "x" << result.Image.Height()
               << " - " << (modeOverride.empty() ? "scene mode" : modeOverride)
               << " - " << result.Stats.RenderMilliseconds << " ms"
-              << " | Esc close, S save, R rerender";
+              << " | Esc close, S save, R rerender, arrows orbit, Q/E zoom, Home reset";
 
         RunPreviewWindow(
             std::move(result.Image),
@@ -139,11 +208,41 @@ int main(
                 title.str(),
                 savePath
             },
-            [&]() -> Film
+            [&](PreviewRenderRequest request) -> Film
             {
                 // The preview layer only asks for a new Film. It does not know
                 // how scenes, BVHs, or integrators work.
-                return renderScene().Image;
+                constexpr float orbitStep =
+                    10.0f * std::numbers::pi_v<float> / 180.0f;
+
+                switch (request)
+                {
+                case PreviewRenderRequest::Reload:
+                    break;
+                case PreviewRenderRequest::OrbitLeft:
+                    orbit.YawOffsetRadians -= orbitStep;
+                    break;
+                case PreviewRenderRequest::OrbitRight:
+                    orbit.YawOffsetRadians += orbitStep;
+                    break;
+                case PreviewRenderRequest::OrbitUp:
+                    orbit.PitchOffsetRadians += orbitStep;
+                    break;
+                case PreviewRenderRequest::OrbitDown:
+                    orbit.PitchOffsetRadians -= orbitStep;
+                    break;
+                case PreviewRenderRequest::ZoomIn:
+                    orbit.DistanceScale = std::max(0.25f, orbit.DistanceScale * 0.85f);
+                    break;
+                case PreviewRenderRequest::ZoomOut:
+                    orbit.DistanceScale = std::min(4.0f, orbit.DistanceScale * 1.15f);
+                    break;
+                case PreviewRenderRequest::ResetOrbit:
+                    orbit = CameraOrbitState{};
+                    break;
+                }
+
+                return renderScene(orbit).Image;
             });
 
         return 0;
