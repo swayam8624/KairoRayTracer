@@ -27,6 +27,11 @@ export namespace kairo::foundation::raytracer
 
         if (!hit)
         {
+            if (stats)
+            {
+                ++stats->MissCount;
+            }
+
             return Color3f::Black();
         }
 

@@ -249,6 +249,49 @@ TEST_CASE("PPM writer emits valid header", "[RayTracer][ImageIO]")
     REQUIRE(maxValue == 255);
 }
 
+TEST_CASE("PNG writer emits valid signature", "[RayTracer][ImageIO]")
+{
+    Film film(2, 1);
+    film.SetPixel(0, 0, Color3f::White());
+    film.SetPixel(1, 0, Color3f::Black());
+
+    const std::filesystem::path outputPath =
+        std::filesystem::temp_directory_path() / "kairo_raytracer_test.png";
+
+    SavePNG(film, outputPath);
+
+    std::ifstream in(outputPath, std::ios::binary);
+    unsigned char signature[8] = {};
+    in.read(reinterpret_cast<char*>(signature), 8);
+
+    REQUIRE(signature[0] == 0x89);
+    REQUIRE(signature[1] == 'P');
+    REQUIRE(signature[2] == 'N');
+    REQUIRE(signature[3] == 'G');
+}
+
+TEST_CASE("Renderer supports resized threaded output", "[RayTracer][Renderer]")
+{
+    Scene scene =
+        ParseSceneText(MinimalSceneText());
+
+    scene.Settings.Width = 19;
+    scene.Settings.Height = 13;
+    scene.Settings.SamplesPerPixel = 4;
+    scene.Settings.ThreadCount = 2;
+    scene.MainCamera.AspectRatio =
+        static_cast<float>(scene.Settings.Width) /
+        static_cast<float>(scene.Settings.Height);
+
+    const RenderResult result =
+        Renderer{}.Render(scene);
+
+    REQUIRE(result.Image.Width() == 19);
+    REQUIRE(result.Image.Height() == 13);
+    REQUIRE(result.Stats.PrimaryRays == 19u * 13u * 4u);
+    REQUIRE(result.Stats.RaysPerSecond > 0.0);
+}
+
 TEST_CASE("Bundled scenes parse and build acceleration", "[RayTracer][Scenes]")
 {
     const std::filesystem::path sceneRoot =

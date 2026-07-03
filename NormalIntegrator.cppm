@@ -29,6 +29,11 @@ export namespace kairo::foundation::raytracer
 
         if (!hit)
         {
+            if (stats)
+            {
+                ++stats->MissCount;
+            }
+
             return scene.Settings.Background;
         }
 

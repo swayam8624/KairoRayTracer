@@ -18,7 +18,7 @@ namespace
     void PrintUsage()
     {
         std::cout
-            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|normal|depth|shadow_mask|bvh_heatmap] [--output path]\n";
+            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|normal|depth|shadow_mask|bvh_heatmap] [--output path] [--width px --height px] [--samples n] [--threads n]\n";
     }
 }
 
@@ -62,6 +62,32 @@ int main(
             {
                 outputPath = argv[++i];
             }
+            else if (arg == "--width" && i + 1 < argc)
+            {
+                scene.Settings.Width =
+                    static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                scene.MainCamera.AspectRatio =
+                    static_cast<float>(scene.Settings.Width) /
+                    static_cast<float>(scene.Settings.Height);
+            }
+            else if (arg == "--height" && i + 1 < argc)
+            {
+                scene.Settings.Height =
+                    static_cast<std::uint32_t>(std::stoul(argv[++i]));
+                scene.MainCamera.AspectRatio =
+                    static_cast<float>(scene.Settings.Width) /
+                    static_cast<float>(scene.Settings.Height);
+            }
+            else if (arg == "--samples" && i + 1 < argc)
+            {
+                scene.Settings.SamplesPerPixel =
+                    static_cast<std::uint32_t>(std::stoul(argv[++i]));
+            }
+            else if (arg == "--threads" && i + 1 < argc)
+            {
+                scene.Settings.ThreadCount =
+                    static_cast<std::uint32_t>(std::stoul(argv[++i]));
+            }
             else
             {
                 PrintUsage();
@@ -79,7 +105,7 @@ int main(
 
         // The renderer returns a CPU Film. ImageIO owns the file encoding step,
         // which is why adding PNG later will not change the render loop.
-        SavePPM(result.Image, outputPath);
+        SaveImage(result.Image, outputPath);
 
         std::cout << "Done in " << result.Stats.RenderMilliseconds << " ms\n"
                   << "Saved " << outputPath << "\n"
@@ -87,8 +113,13 @@ int main(
                   << "shadow rays = " << result.Stats.ShadowRays << "\n"
                   << "reflection rays = " << result.Stats.ReflectionRays << "\n"
                   << "hits = " << result.Stats.HitCount << "\n"
+                  << "misses = " << result.Stats.MissCount << "\n"
+                  << "max recursion depth = " << result.Stats.MaxRecursionDepthReached << "\n"
                   << "bvh nodes visited = " << result.Stats.BVHVisitedNodes << "\n"
-                  << "bvh primitives tested = " << result.Stats.BVHTestedPrimitives << "\n";
+                  << "bvh primitives tested = " << result.Stats.BVHTestedPrimitives << "\n"
+                  << "rays/sec = " << result.Stats.RaysPerSecond << "\n"
+                  << "primitive tests/ray = " << result.Stats.PrimitiveTestsPerRay << "\n"
+                  << "nodes visited/ray = " << result.Stats.NodesVisitedPerRay << "\n";
 
         return 0;
     }

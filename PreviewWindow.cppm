@@ -143,7 +143,7 @@ export namespace kairo::foundation::raytracer
 
             if (savePressed && !saveWasPressed)
             {
-                SavePPM(film, options.SavePath);
+                SaveImage(film, options.SavePath);
                 std::cout << "Saved " << options.SavePath << "\n";
             }
 
@@ -160,7 +160,7 @@ export namespace kairo::foundation::raytracer
                 film = rerender();
                 bytes = ToSRGBBytes(film);
                 uploadTexture();
-                SavePPM(film, options.SavePath);
+                SaveImage(film, options.SavePath);
                 std::cout << "Re-rendered and saved " << options.SavePath << "\n";
             }
 

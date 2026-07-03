@@ -2,6 +2,8 @@ module;
 
 #include <chrono>
 #include <cstdint>
+#include <atomic>
+#include <algorithm>
 #include <thread>
 #include <vector>
 
@@ -48,9 +50,35 @@ export namespace kairo::foundation::raytracer
             const auto start =
                 std::chrono::steady_clock::now();
 
-            for (std::uint32_t y = 0; y < scene.Settings.Height; ++y)
-            {
-                for (std::uint32_t x = 0; x < scene.Settings.Width; ++x)
+            const std::uint32_t tileSize =
+                scene.Settings.TileSize == 0 ? 16u : scene.Settings.TileSize;
+
+            const std::uint32_t tilesX =
+                (scene.Settings.Width + tileSize - 1u) / tileSize;
+
+            const std::uint32_t tilesY =
+                (scene.Settings.Height + tileSize - 1u) / tileSize;
+
+            const std::uint32_t tileCount =
+                tilesX * tilesY;
+
+            const std::uint32_t hardwareThreads =
+                std::max(1u, std::thread::hardware_concurrency());
+
+            const std::uint32_t workerCount =
+                std::max(
+                    1u,
+                    std::min(
+                        scene.Settings.ThreadCount == 0 ? hardwareThreads : scene.Settings.ThreadCount,
+                        tileCount == 0 ? 1u : tileCount));
+
+            std::atomic<std::uint32_t> nextTile = 0;
+            std::vector<RenderStats> workerStats(workerCount);
+            std::vector<std::thread> workers;
+            workers.reserve(workerCount);
+
+            auto renderPixel =
+                [&](std::uint32_t x, std::uint32_t y, RenderStats& localStats)
                 {
                     Color3f accumulated = Color3f::Black();
 
@@ -74,15 +102,73 @@ export namespace kairo::foundation::raytracer
                         const Rayf ray =
                             scene.MainCamera.GenerateRay(u, v);
 
-                        ++stats.PrimaryRays;
-                        accumulated += Trace(scene, ray, &stats);
+                        ++localStats.PrimaryRays;
+                        accumulated += Trace(scene, ray, &localStats);
                     }
 
                     film.SetPixel(
                         x,
                         y,
                         accumulated / static_cast<float>(scene.Settings.SamplesPerPixel));
-                }
+                };
+
+            auto renderTiles =
+                [&](std::uint32_t workerIndex)
+                {
+                    RenderStats& localStats =
+                        workerStats[workerIndex];
+
+                    while (true)
+                    {
+                        const std::uint32_t tileIndex =
+                            nextTile.fetch_add(1u, std::memory_order_relaxed);
+
+                        if (tileIndex >= tileCount)
+                        {
+                            break;
+                        }
+
+                        const std::uint32_t tileX =
+                            tileIndex % tilesX;
+
+                        const std::uint32_t tileY =
+                            tileIndex / tilesX;
+
+                        const std::uint32_t beginX =
+                            tileX * tileSize;
+
+                        const std::uint32_t beginY =
+                            tileY * tileSize;
+
+                        const std::uint32_t endX =
+                            std::min(beginX + tileSize, scene.Settings.Width);
+
+                        const std::uint32_t endY =
+                            std::min(beginY + tileSize, scene.Settings.Height);
+
+                        for (std::uint32_t y = beginY; y < endY; ++y)
+                        {
+                            for (std::uint32_t x = beginX; x < endX; ++x)
+                            {
+                                renderPixel(x, y, localStats);
+                            }
+                        }
+                    }
+                };
+
+            for (std::uint32_t workerIndex = 0; workerIndex < workerCount; ++workerIndex)
+            {
+                workers.emplace_back(renderTiles, workerIndex);
+            }
+
+            for (std::thread& worker : workers)
+            {
+                worker.join();
+            }
+
+            for (const RenderStats& localStats : workerStats)
+            {
+                Accumulate(stats, localStats);
             }
 
             const auto end =
@@ -90,6 +176,8 @@ export namespace kairo::foundation::raytracer
 
             stats.RenderMilliseconds =
                 std::chrono::duration<double, std::milli>(end - start).count();
+
+            FinalizeDerivedStats(stats);
 
             return { std::move(film), stats };
         }

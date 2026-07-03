@@ -19,7 +19,7 @@ namespace
     void PrintUsage()
     {
         std::cout
-            << "Usage: KairoRayTracerPreview <scene.kairo> [--mode whitted|normal|depth|shadow_mask|bvh_heatmap]\n";
+            << "Usage: KairoRayTracerPreview <scene.kairo> [--mode whitted|normal|depth|shadow_mask|bvh_heatmap] [--width px --height px] [--samples n]\n";
     }
 }
 
@@ -39,6 +39,9 @@ int main(
             argv[1];
 
         std::string modeOverride;
+        std::uint32_t widthOverride = 0;
+        std::uint32_t heightOverride = 0;
+        std::uint32_t samplesOverride = 0;
         for (int i = 2; i < argc; ++i)
         {
             const std::string arg =
@@ -47,6 +50,18 @@ int main(
             if (arg == "--mode" && i + 1 < argc)
             {
                 modeOverride = argv[++i];
+            }
+            else if (arg == "--width" && i + 1 < argc)
+            {
+                widthOverride = static_cast<std::uint32_t>(std::stoul(argv[++i]));
+            }
+            else if (arg == "--height" && i + 1 < argc)
+            {
+                heightOverride = static_cast<std::uint32_t>(std::stoul(argv[++i]));
+            }
+            else if (arg == "--samples" && i + 1 < argc)
+            {
+                samplesOverride = static_cast<std::uint32_t>(std::stoul(argv[++i]));
             }
             else
             {
@@ -69,6 +84,25 @@ int main(
                         RenderModeFromString(modeOverride);
                 }
 
+                if (widthOverride != 0)
+                {
+                    scene.Settings.Width = widthOverride;
+                }
+
+                if (heightOverride != 0)
+                {
+                    scene.Settings.Height = heightOverride;
+                }
+
+                if (samplesOverride != 0)
+                {
+                    scene.Settings.SamplesPerPixel = samplesOverride;
+                }
+
+                scene.MainCamera.AspectRatio =
+                    static_cast<float>(scene.Settings.Width) /
+                    static_cast<float>(scene.Settings.Height);
+
                 std::cout << "Rendering preview "
                           << scene.Settings.Width << "x" << scene.Settings.Height
                           << " mode=" << ToString(scene.Settings.Mode) << "...\n";
@@ -89,7 +123,7 @@ int main(
                 ? "beauty.ppm"
                 : OutputNameForMode(RenderModeFromString(modeOverride)));
 
-        SavePPM(result.Image, savePath);
+        SaveImage(result.Image, savePath);
 
         std::ostringstream title;
         title << "KairoRayTracer - " << scenePath.filename().string()

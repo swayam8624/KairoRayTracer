@@ -39,9 +39,13 @@ export namespace kairo::foundation::raytracer
         std::uint32_t Height = 600;
         std::uint32_t SamplesPerPixel = 1;
         std::uint32_t MaxDepth = 4;
+        std::uint32_t TileSize = 16;
+        std::uint32_t ThreadCount = 0;
         float DepthNear = 0.1f;
         float DepthFar = 25.0f;
-        float RayBias = 1.0e-3f;
+        float RayBiasAbsolute = 1.0e-4f;
+        float RayBiasRelative = 1.0e-4f;
+        float MinimumLightDistanceSquared = 0.35f;
         RenderMode Mode = RenderMode::Whitted;
         Color3f Background = { 0.02f, 0.03f, 0.05f };
     };
@@ -55,10 +59,75 @@ export namespace kairo::foundation::raytracer
         std::uint64_t ShadowRays = 0;
         std::uint64_t ReflectionRays = 0;
         std::uint64_t HitCount = 0;
+        std::uint64_t MissCount = 0;
         std::uint64_t BVHVisitedNodes = 0;
         std::uint64_t BVHTestedPrimitives = 0;
+        std::uint32_t MaxRecursionDepthReached = 0;
         double RenderMilliseconds = 0.0;
+        double RaysPerSecond = 0.0;
+        double PrimitiveTestsPerRay = 0.0;
+        double NodesVisitedPerRay = 0.0;
     };
+
+    [[nodiscard]]
+    inline std::uint64_t TotalRays(
+        const RenderStats& stats) noexcept
+    {
+        return stats.PrimaryRays + stats.ShadowRays + stats.ReflectionRays;
+    }
+
+    inline void Accumulate(
+        RenderStats& target,
+        const RenderStats& source) noexcept
+    {
+        target.PrimaryRays += source.PrimaryRays;
+        target.ShadowRays += source.ShadowRays;
+        target.ReflectionRays += source.ReflectionRays;
+        target.HitCount += source.HitCount;
+        target.MissCount += source.MissCount;
+        target.BVHVisitedNodes += source.BVHVisitedNodes;
+        target.BVHTestedPrimitives += source.BVHTestedPrimitives;
+        target.MaxRecursionDepthReached =
+            target.MaxRecursionDepthReached > source.MaxRecursionDepthReached
+                ? target.MaxRecursionDepthReached
+                : source.MaxRecursionDepthReached;
+    }
+
+    inline void FinalizeDerivedStats(
+        RenderStats& stats) noexcept
+    {
+        const double totalRays =
+            static_cast<double>(TotalRays(stats));
+
+        const double seconds =
+            stats.RenderMilliseconds / 1000.0;
+
+        stats.RaysPerSecond =
+            seconds > 0.0 ? totalRays / seconds : 0.0;
+
+        stats.PrimitiveTestsPerRay =
+            totalRays > 0.0
+                ? static_cast<double>(stats.BVHTestedPrimitives) / totalRays
+                : 0.0;
+
+        stats.NodesVisitedPerRay =
+            totalRays > 0.0
+                ? static_cast<double>(stats.BVHVisitedNodes) / totalRays
+                : 0.0;
+    }
+
+    [[nodiscard]]
+    inline float RayBiasForHit(
+        const RenderSettings& settings,
+        float hitDistance) noexcept
+    {
+        const float relative =
+            settings.RayBiasRelative * (hitDistance > 0.0f ? hitDistance : 1.0f);
+
+        return settings.RayBiasAbsolute > relative
+            ? settings.RayBiasAbsolute
+            : relative;
+    }
 
     // SurfaceHit is richer than SpatialRayHit because shading needs material,
     // normal, UV, and render primitive identity. Spatial remains a broadphase

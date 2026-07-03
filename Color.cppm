@@ -1,6 +1,7 @@
 module;
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <stdexcept>
@@ -83,10 +84,7 @@ export namespace kairo::foundation::raytracer
         constexpr Color3f operator/(
             float scalar) const
         {
-            if (scalar == 0.0f)
-            {
-                throw std::invalid_argument("Color division by zero.");
-            }
+            assert(scalar != 0.0f && "Color division by zero.");
 
             return { r / scalar, g / scalar, b / scalar };
         }

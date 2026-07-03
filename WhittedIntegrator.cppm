@@ -39,12 +39,21 @@ export namespace kairo::foundation::raytracer
 
         if (!hit)
         {
+            if (stats)
+            {
+                ++stats->MissCount;
+            }
+
             return scene.Settings.Background;
         }
 
         if (stats)
         {
             ++stats->HitCount;
+            stats->MaxRecursionDepthReached =
+                stats->MaxRecursionDepthReached > depth
+                    ? stats->MaxRecursionDepthReached
+                    : depth;
         }
 
         const Material& material =
@@ -66,7 +75,7 @@ export namespace kairo::foundation::raytracer
 
             const Rayf reflectionRay =
                 Rayf::FromOriginDirection(
-                    hit->Position + hit->Normal * scene.Settings.RayBias,
+                    hit->Position + hit->Normal * RayBiasForHit(scene.Settings, hit->Distance),
                     reflectionDirection);
 
             if (stats)
@@ -109,7 +118,7 @@ export namespace kairo::foundation::raytracer
 
             const Rayf shadowRay =
                 Rayf::FromOriginDirection(
-                    hit->Position + hit->Normal * scene.Settings.RayBias,
+                    hit->Position + hit->Normal * RayBiasForHit(scene.Settings, hit->Distance),
                     lightDirection);
 
             if (stats)
@@ -117,13 +126,13 @@ export namespace kairo::foundation::raytracer
                 ++stats->ShadowRays;
             }
 
-            if (scene.Occluded(shadowRay, lightDistance - scene.Settings.RayBias, stats))
+            if (scene.Occluded(shadowRay, lightDistance - RayBiasForHit(scene.Settings, hit->Distance), stats))
             {
                 continue;
             }
 
             const float attenuation =
-                light.Intensity / std::max(lightDistance * lightDistance, 0.35f);
+                light.Intensity / std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
 
             color +=
                 material.Albedo *
@@ -147,6 +156,11 @@ export namespace kairo::foundation::raytracer
 
         if (!hit)
         {
+            if (stats)
+            {
+                ++stats->MissCount;
+            }
+
             return Color3f::Black();
         }
 
@@ -168,10 +182,10 @@ export namespace kairo::foundation::raytracer
 
             const Rayf shadowRay =
                 Rayf::FromOriginDirection(
-                    hit->Position + hit->Normal * scene.Settings.RayBias,
+                    hit->Position + hit->Normal * RayBiasForHit(scene.Settings, hit->Distance),
                     lightDirection);
 
-            if (!scene.Occluded(shadowRay, lightDistance - scene.Settings.RayBias, stats))
+            if (!scene.Occluded(shadowRay, lightDistance - RayBiasForHit(scene.Settings, hit->Distance), stats))
             {
                 return Color3f::White();
             }
@@ -201,6 +215,11 @@ export namespace kairo::foundation::raytracer
 
         if (!hit)
         {
+            if (stats)
+            {
+                ++stats->MissCount;
+            }
+
             return Color3f::Black();
         }
 
