@@ -72,6 +72,7 @@ target_sources(KairoRayTracer
             NormalIntegrator.cppm
             DepthIntegrator.cppm
             WhittedIntegrator.cppm
+            PBRIntegrator.cppm
             Renderer.cppm
             KairoRayTracer.cppm
 )

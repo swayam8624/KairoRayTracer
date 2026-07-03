@@ -18,6 +18,7 @@ import Kairo.Foundation.RayTracer.Sampler;
 import Kairo.Foundation.RayTracer.NormalIntegrator;
 import Kairo.Foundation.RayTracer.DepthIntegrator;
 import Kairo.Foundation.RayTracer.WhittedIntegrator;
+import Kairo.Foundation.RayTracer.PBRIntegrator;
 
 export namespace kairo::foundation::raytracer
 {
@@ -197,6 +198,8 @@ export namespace kairo::foundation::raytracer
                 return TraceDepth(scene, ray, stats);
             case RenderMode::Whitted:
                 return TraceWhitted(scene, ray, 0, stats);
+            case RenderMode::PBR:
+                return TracePBRDirect(scene, ray, stats);
             case RenderMode::ShadowMask:
                 return TraceShadowMask(scene, ray, stats);
             case RenderMode::BVHHeatmap:

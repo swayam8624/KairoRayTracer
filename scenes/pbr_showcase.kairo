@@ -1,0 +1,23 @@
+# PBR direct-lighting showcase
+# Purpose:
+# - Exercises Cook-Torrance/GGX direct lighting.
+# - The three spheres vary roughness and metallic response.
+resolution 900 520
+samples 4
+background 0.018 0.022 0.036
+integrator pbr
+camera 0 1.6 6.6 0 0.8 0 0 1 0 38
+
+material floor pbr 0.52 0.52 0.55 0.85 0.0
+material rough_red pbr 0.95 0.10 0.08 0.85 0.0
+material glossy_blue pbr 0.08 0.32 0.95 0.22 0.0
+material metal_gold pbr 1.00 0.72 0.22 0.18 1.0
+
+light point -2.8 4.5 2.8 1.0 0.93 0.82 34.0
+light point 3.0 3.0 2.2 0.55 0.70 1.0 8.0
+
+triangle -5 0 -5  5 0 -5  5 0 5 floor
+triangle -5 0 -5  5 0 5  -5 0 5 floor
+sphere -1.7 0.65 -0.35 0.65 rough_red
+sphere 0.0 0.65 -0.35 0.65 glossy_blue
+sphere 1.7 0.65 -0.35 0.65 metal_gold

@@ -26,6 +26,7 @@ export namespace kairo::foundation::raytracer
         if (value == "uv") return RenderMode::UV;
         if (value == "barycentric") return RenderMode::Barycentric;
         if (value == "accel_diff") return RenderMode::AccelerationDifference;
+        if (value == "pbr") return RenderMode::PBR;
 
         throw std::invalid_argument("Unknown render mode: " + value);
     }
@@ -46,6 +47,7 @@ export namespace kairo::foundation::raytracer
         case RenderMode::UV: return "uv.ppm";
         case RenderMode::Barycentric: return "barycentric.ppm";
         case RenderMode::AccelerationDifference: return "accel_diff.ppm";
+        case RenderMode::PBR: return "pbr.ppm";
         }
 
         return "output.ppm";

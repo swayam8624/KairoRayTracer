@@ -230,6 +230,7 @@ export namespace kairo::foundation::raytracer
             if (token.Text == "uv") return RenderMode::UV;
             if (token.Text == "barycentric") return RenderMode::Barycentric;
             if (token.Text == "accel_diff") return RenderMode::AccelerationDifference;
+            if (token.Text == "pbr") return RenderMode::PBR;
 
             Fail(line, token.Column, "unknown integrator `" + token.Text + "`.");
         }
@@ -242,6 +243,7 @@ export namespace kairo::foundation::raytracer
             if (token.Text == "lambert") return MaterialType::Lambert;
             if (token.Text == "mirror") return MaterialType::Mirror;
             if (token.Text == "glass") return MaterialType::Glass;
+            if (token.Text == "pbr") return MaterialType::PBR;
             if (token.Text == "emissive") return MaterialType::Emissive;
 
             Fail(line, token.Column, "unknown material type `" + token.Text + "`.");
@@ -326,9 +328,9 @@ export namespace kairo::foundation::raytracer
                 // Emissive materials may provide explicit emission. If omitted,
                 // albedo becomes the visible emission color so small demo scenes
                 // can be concise.
-                if (tokens.size() != 6 && tokens.size() != 7 && tokens.size() != 9)
+                if (tokens.size() != 6 && tokens.size() != 7 && tokens.size() != 8 && tokens.size() != 9)
                 {
-                    parser_detail::Fail(line, tokens[0].Column, "usage: material name type r g b [ior | emitR emitG emitB].");
+                    parser_detail::Fail(line, tokens[0].Column, "usage: material name type r g b [ior | roughness metallic | emitR emitG emitB].");
                 }
 
                 Material material;
@@ -338,6 +340,12 @@ export namespace kairo::foundation::raytracer
                 if (material.Type == MaterialType::Glass && tokens.size() == 7)
                 {
                     material.IOR = parser_detail::ParseFloat(tokens[6], line);
+                }
+
+                if (material.Type == MaterialType::PBR && tokens.size() == 8)
+                {
+                    material.Roughness = parser_detail::ParseFloat(tokens[6], line);
+                    material.Metallic = parser_detail::ParseFloat(tokens[7], line);
                 }
 
                 material.Emission = tokens.size() == 9

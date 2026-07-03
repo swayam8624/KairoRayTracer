@@ -124,6 +124,8 @@ background r g b
 integrator whitted|normal|depth|shadow_mask|bvh_heatmap
 camera px py pz tx ty tz upx upy upz fovDegrees
 material name lambert|mirror|emissive r g b [emitR emitG emitB]
+material name glass r g b ior
+material name pbr r g b roughness metallic
 light point x y z r g b intensity
 sphere x y z radius materialName
 triangle ax ay az bx by bz cx cy cz materialName
@@ -146,6 +148,7 @@ scenes/emissive_showcase.kairo
 scenes/parser_reference.kairo
 scenes/glass_refraction.kairo
 scenes/mesh_showcase.kairo
+scenes/pbr_showcase.kairo
 ```
 
 Scene purpose:
@@ -162,6 +165,7 @@ emissive_showcase.kairo  visible emissive geometry plus colored lights
 parser_reference.kairo   compact reference for every V1 scene command
 glass_refraction.kairo   glass material and Schlick Fresnel/refraction test
 mesh_showcase.kairo      OBJ mesh loading converted into triangle primitives
+pbr_showcase.kairo       Cook-Torrance/GGX direct lighting demo
 ```
 
 Render every main debug output for the default scene:
