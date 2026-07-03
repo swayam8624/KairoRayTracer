@@ -12,6 +12,39 @@ V1 intentionally avoids ImGui, Vulkan, Metal, JSON, PNG, OBJ, and path tracing.
 It loads `.kairo` scene files, renders on the CPU, saves PPM images, and can show
 the completed render in a small GLFW/OpenGL preview window.
 
+## How To Read This Project
+
+Read the code in this order if you want to master the concepts:
+
+```text
+Color.cppm          linear color, gamma, output bytes
+Film.cppm           image memory layout
+Camera.cppm         pinhole camera and primary rays
+Primitive.cppm      sphere/triangle bounds and intersections
+Scene.cppm          render objects mapped into KairoSpatial BVH
+SceneParser.cppm    .kairo text scene format
+NormalIntegrator    normal visualization
+DepthIntegrator     depth visualization
+WhittedIntegrator   lighting, shadows, recursive mirror rays
+Renderer.cppm       pixel loop and integrator dispatch
+PreviewWindow.cppm  CPU film displayed in a GLFW/OpenGL window
+```
+
+The most important mental model:
+
+```text
+scene file
+  -> parser
+  -> Scene materials/lights/primitives
+  -> primitive bounds
+  -> KairoSpatial BVH
+  -> camera ray per pixel
+  -> exact primitive intersection
+  -> integrator shading
+  -> Film
+  -> PPM file and optional preview window
+```
+
 ## Build
 
 ```bash
@@ -92,6 +125,36 @@ Example scenes:
 scenes/cornell.kairo
 scenes/reflective_spheres.kairo
 scenes/triangle_floor.kairo
+scenes/shadow_lab.kairo
+scenes/mirror_hall.kairo
+scenes/bvh_stress.kairo
+scenes/normal_depth_lab.kairo
+scenes/emissive_showcase.kairo
+scenes/parser_reference.kairo
+```
+
+Scene purpose:
+
+```text
+cornell.kairo            room, colored walls, mirror object, good default beauty test
+reflective_spheres.kairo open floor and multiple lights for readable reflections
+triangle_floor.kairo     simple normal/debug scene
+shadow_lab.kairo         hard-shadow blocker test
+mirror_hall.kairo        recursive mirror stress test
+bvh_stress.kairo         many primitives for bvh_heatmap traversal visualization
+normal_depth_lab.kairo   clean shapes for normal/depth render modes
+emissive_showcase.kairo  visible emissive geometry plus colored lights
+parser_reference.kairo   compact reference for every V1 scene command
+```
+
+Render every main debug output for the default scene:
+
+```bash
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --output outputs/beauty.ppm
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode normal --output outputs/normal.ppm
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode depth --output outputs/depth.ppm
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode shadow_mask --output outputs/shadow_mask.ppm
+./build/KairoRayTracerCLI scenes/cornell.kairo --mode bvh_heatmap --output outputs/bvh_heatmap.ppm
 ```
 
 ## V1 Features
@@ -117,4 +180,44 @@ Camera orbit controls
 PBR and path tracing
 ImGui debug/editor UI
 GPU backend
+```
+
+## Concept Notes
+
+Ray tracing:
+
+```text
+For each pixel, the camera creates a ray. The scene finds the nearest surface
+hit. The integrator decides what color that hit should produce.
+```
+
+BVH acceleration:
+
+```text
+Brute force tests every primitive for every ray. BVH traversal first rejects
+large empty regions using bounding boxes, then tests only likely primitives.
+```
+
+Whitted shading:
+
+```text
+Whitted rendering is direct lighting plus recursive perfect reflections. It is
+not global illumination; diffuse surfaces do not bounce indirect light yet.
+```
+
+Shadow rays:
+
+```text
+After a primary ray hits a surface, a secondary ray is sent toward each light.
+If anything blocks that segment, that light contributes nothing at the point.
+```
+
+Debug render modes:
+
+```text
+normal       checks surface normals and winding
+depth        checks nearest-hit distance and camera framing
+shadow_mask  checks light visibility and self-intersection bias
+bvh_heatmap  checks acceleration traversal cost
+whitted      combines geometry, BVH, materials, lights, shadows, and reflection
 ```

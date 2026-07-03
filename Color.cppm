@@ -9,6 +9,16 @@ export module Kairo.Foundation.RayTracer.Color;
 
 export namespace kairo::foundation::raytracer
 {
+    //=========================================================
+    // Color3f
+    //
+    // Ray tracers should do lighting in linear color space. Linear means
+    // "twice the number is twice the light energy", which makes addition,
+    // multiplication by albedo, and light attenuation physically meaningful.
+    // Monitors and image viewers usually expect gamma-encoded values, so the
+    // conversion to bytes happens only at the final output boundary.
+    //=========================================================
+
     /// Linear RGB color used internally by the renderer.
     ///
     /// Convention:
@@ -26,6 +36,9 @@ export namespace kairo::foundation::raytracer
         [[nodiscard]]
         static constexpr Color3f White() noexcept { return { 1.0f, 1.0f, 1.0f }; }
 
+        /// Input: another linear RGB color.
+        /// Output: channel-wise sum.
+        /// Task: accumulate independent light contributions into one pixel.
         [[nodiscard]]
         constexpr Color3f operator+(
             const Color3f& rhs) const noexcept
@@ -33,6 +46,9 @@ export namespace kairo::foundation::raytracer
             return { r + rhs.r, g + rhs.g, b + rhs.b };
         }
 
+        /// Input: another linear RGB color.
+        /// Output: channel-wise difference.
+        /// Task: support simple color math in tests/debug calculations.
         [[nodiscard]]
         constexpr Color3f operator-(
             const Color3f& rhs) const noexcept
@@ -40,6 +56,9 @@ export namespace kairo::foundation::raytracer
             return { r - rhs.r, g - rhs.g, b - rhs.b };
         }
 
+        /// Input: another linear RGB color.
+        /// Output: channel-wise product.
+        /// Task: model albedo filtering, where red surfaces keep red light and absorb other channels.
         [[nodiscard]]
         constexpr Color3f operator*(
             const Color3f& rhs) const noexcept
@@ -47,6 +66,9 @@ export namespace kairo::foundation::raytracer
             return { r * rhs.r, g * rhs.g, b * rhs.b };
         }
 
+        /// Input: scalar multiplier.
+        /// Output: color scaled uniformly.
+        /// Task: apply light intensity, Lambert terms, averaging, and debug exposure.
         [[nodiscard]]
         constexpr Color3f operator*(
             float scalar) const noexcept
@@ -54,6 +76,9 @@ export namespace kairo::foundation::raytracer
             return { r * scalar, g * scalar, b * scalar };
         }
 
+        /// Input: scalar divisor.
+        /// Output: color divided uniformly.
+        /// Task: average multiple samples per pixel while guarding division by zero.
         [[nodiscard]]
         constexpr Color3f operator/(
             float scalar) const
@@ -66,6 +91,9 @@ export namespace kairo::foundation::raytracer
             return { r / scalar, g / scalar, b / scalar };
         }
 
+        /// Input: color to add.
+        /// Output: reference to this color after accumulation.
+        /// Task: keep the renderer loop simple while summing samples and lights.
         constexpr Color3f& operator+=(
             const Color3f& rhs) noexcept
         {
@@ -76,6 +104,9 @@ export namespace kairo::foundation::raytracer
         }
     };
 
+    /// Input: scalar and color.
+    /// Output: uniformly scaled color.
+    /// Task: allow both `color * scalar` and `scalar * color` notation.
     [[nodiscard]]
     constexpr Color3f operator*(
         float scalar,

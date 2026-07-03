@@ -15,6 +15,9 @@ export namespace kairo::foundation::raytracer
     using namespace kairo::foundation::math;
     using namespace kairo::foundation::geometry;
 
+    // Normal rendering maps surface normal components from [-1, 1] to [0, 1].
+    // It is the fastest way to see wrong winding, bad transforms, or incorrect
+    // sphere normals before lighting makes the problem harder to read.
     [[nodiscard]]
     inline Color3f TraceNormal(
         const Scene& scene,

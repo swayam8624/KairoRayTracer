@@ -1,0 +1,21 @@
+# Parser reference
+# Purpose:
+# - Small scene with every V1 command in one place.
+# - Good file to read when writing new .kairo scenes by hand.
+resolution 480 320
+samples 1
+background 0.04 0.05 0.07
+integrator whitted
+camera 0 1.5 5.0 0 0.8 0 0 1 0 45
+
+material diffuse lambert 0.70 0.35 0.18
+material mirror_ball mirror 0.90 0.94 1.00
+material lamp emissive 1.00 0.90 0.65 4.0 3.0 1.5
+
+light point 0 3.8 2.5 1.0 0.9 0.75 12.0
+
+triangle -3 0 -3  3 0 -3  3 0 3 diffuse
+triangle -3 0 -3  3 0 3  -3 0 3 diffuse
+sphere -0.8 0.6 -0.2 0.6 diffuse
+sphere 0.95 0.55 0.1 0.55 mirror_ball
+triangle -0.35 2.4 -0.6  0.35 2.4 -0.6  0.0 2.95 -0.6 lamp

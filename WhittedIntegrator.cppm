@@ -19,6 +19,9 @@ export namespace kairo::foundation::raytracer
     using namespace kairo::foundation::math;
     using namespace kairo::foundation::geometry;
 
+    // Whitted tracing is classic recursive ray tracing:
+    // primary ray -> nearest hit -> direct light/shadow -> optional mirror ray.
+    // It is not path tracing; it does not sample indirect diffuse bounces.
     [[nodiscard]]
     inline Color3f TraceWhitted(
         const Scene& scene,
@@ -54,6 +57,8 @@ export namespace kairo::foundation::raytracer
 
         if (material.Type == MaterialType::Mirror)
         {
+            // Perfect mirrors do not use local diffuse lighting. The outgoing
+            // color is the reflected ray result tinted by the material albedo.
             const Vec3f reflectionDirection =
                 SafeNormalize(
                     Reflect(ray.Direction, hit->Normal),
@@ -78,6 +83,8 @@ export namespace kairo::foundation::raytracer
 
         for (const PointLight& light : scene.Lights)
         {
+            // Lambertian direct light: albedo * lightColor * max(N dot L, 0).
+            // The shadow ray decides whether this light is visible from the hit.
             const Vec3f toLight =
                 light.Position - hit->Position;
 
@@ -133,6 +140,8 @@ export namespace kairo::foundation::raytracer
         const Rayf& ray,
         RenderStats* stats)
     {
+        // White means at least one light is visible. Dark gray means every light
+        // was blocked. This is a focused debug view for shadow-ray behavior.
         const std::optional<SurfaceHit> hit =
             scene.Intersect(ray, stats);
 
@@ -177,6 +186,9 @@ export namespace kairo::foundation::raytracer
         const Rayf& ray,
         RenderStats* stats)
     {
+        // Heatmaps turn traversal work into color. Brighter red means more BVH
+        // nodes were visited for that pixel, useful when testing scene layout or
+        // split heuristics.
         RenderStats localStats;
         const std::optional<SurfaceHit> hit =
             scene.Intersect(ray, &localStats);

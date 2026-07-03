@@ -10,6 +10,14 @@ import Kairo.Foundation.RayTracer.Color;
 
 export namespace kairo::foundation::raytracer
 {
+    //=========================================================
+    // Film
+    //
+    // The film owns the final image in linear RGB. It does not know about
+    // cameras, scenes, or file formats. That separation keeps rendering,
+    // storage, and output encoding independently testable.
+    //=========================================================
+
     class Film final
     {
     public:
@@ -26,6 +34,9 @@ export namespace kairo::foundation::raytracer
             std::uint32_t width,
             std::uint32_t height)
         {
+            // A zero-sized film usually means a bad scene file or command-line
+            // override. Fail early instead of letting the render loop silently do
+            // no work.
             if (width == 0 || height == 0)
             {
                 throw std::invalid_argument("Film dimensions must be non-zero.");
@@ -55,6 +66,9 @@ export namespace kairo::foundation::raytracer
             std::uint32_t y,
             const Color3f& color)
         {
+            // std::vector::at intentionally preserves bounds checks in this V1
+            // educational renderer. If a future hot path needs raw indexing, the
+            // tests should already prove the coordinate math first.
             m_Pixels.at(IndexOf(x, y)) = color;
         }
 

@@ -22,6 +22,14 @@ import Kairo.Foundation.RayTracer.ImageIO;
 
 export namespace kairo::foundation::raytracer
 {
+    //=========================================================
+    // Preview Window
+    //
+    // This is not an editor. It is a thin image viewer for a completed CPU film.
+    // The important design boundary is that the ray tracer still produces an
+    // image file; GLFW only helps inspect the result immediately.
+    //=========================================================
+
     struct PreviewOptions final
     {
         std::string Title = "KairoRayTracer Preview";
@@ -59,6 +67,8 @@ export namespace kairo::foundation::raytracer
         PreviewOptions options,
         const std::function<Film()>& rerender)
     {
+        // GLFW owns the OS window and OpenGL context. The CPU renderer has
+        // already finished before this function starts drawing.
         if (!glfwInit())
         {
             throw std::runtime_error("Failed to initialize GLFW.");
@@ -93,6 +103,9 @@ export namespace kairo::foundation::raytracer
         auto uploadTexture =
             [&]()
             {
+                // Uploading a texture is more reliable on macOS than old
+                // glDrawPixels paths. The film stays CPU-owned; this texture is
+                // only a display copy.
                 glBindTexture(GL_TEXTURE_2D, texture);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -141,6 +154,9 @@ export namespace kairo::foundation::raytracer
 
             if (rerenderPressed && !rerenderWasPressed)
             {
+                // R reloads the same scene through the callback supplied by the
+                // preview executable. That keeps file watching/editor behavior
+                // out of this minimal viewer.
                 film = rerender();
                 bytes = ToSRGBBytes(film);
                 uploadTexture();

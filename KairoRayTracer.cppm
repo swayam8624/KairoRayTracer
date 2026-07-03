@@ -1,5 +1,7 @@
 export module Kairo.Foundation.RayTracer;
 
+// Umbrella module for users who want the complete V1 ray tracer surface through
+// one import. Individual modules remain available for focused builds/tests.
 export import Kairo.Foundation.RayTracer.Color;
 export import Kairo.Foundation.RayTracer.Types;
 export import Kairo.Foundation.RayTracer.Film;

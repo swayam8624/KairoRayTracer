@@ -6,6 +6,13 @@ import Kairo.Foundation.RayTracer;
 
 using namespace kairo::foundation::raytracer;
 
+// CLI executable:
+// - Loads a .kairo scene file.
+// - Optionally overrides the render mode/output path.
+// - Renders once and writes a PPM image.
+//
+// This is the most reproducible way to test the ray tracer because every output
+// is a file artifact that can be compared, opened, or shared.
 namespace
 {
     void PrintUsage()
@@ -38,6 +45,9 @@ int main(
 
         for (int i = 2; i < argc; ++i)
         {
+            // Argument parsing is intentionally tiny and explicit. This keeps V1
+            // dependency-free while still supporting the two overrides needed
+            // most during debugging: render mode and output file.
             const std::string arg =
                 argv[i];
 
@@ -67,6 +77,8 @@ int main(
         const RenderResult result =
             Renderer{}.Render(scene);
 
+        // The renderer returns a CPU Film. ImageIO owns the file encoding step,
+        // which is why adding PNG later will not change the render loop.
         SavePPM(result.Image, outputPath);
 
         std::cout << "Done in " << result.Stats.RenderMilliseconds << " ms\n"

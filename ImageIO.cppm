@@ -11,6 +11,14 @@ import Kairo.Foundation.RayTracer.Film;
 
 export namespace kairo::foundation::raytracer
 {
+    //=========================================================
+    // ImageIO
+    //
+    // PPM is used first because it is completely transparent: a tiny text
+    // header plus RGB numbers. That makes output bugs easy to inspect before
+    // adding PNG/HDR libraries later.
+    //=========================================================
+
     /// Input: film and destination path.
     /// Output: ASCII PPM image on disk.
     /// Task: provide a dependency-free V1 image format for renderer output.

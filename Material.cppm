@@ -9,6 +9,17 @@ import Kairo.Foundation.RayTracer.Color;
 
 export namespace kairo::foundation::raytracer
 {
+    //=========================================================
+    // Materials
+    //
+    // V1 materials are intentionally small:
+    // - Lambert: matte diffuse surface.
+    // - Mirror: perfect specular reflection.
+    // - Emissive: visible light-emitting surface.
+    // Roughness/metallic/IOR are stored now so the file format can grow toward
+    // PBR/path tracing without replacing the public material record.
+    //=========================================================
+
     enum class MaterialType : std::uint8_t
     {
         Lambert,

@@ -20,6 +20,14 @@ export namespace kairo::foundation::raytracer
     using namespace kairo::foundation::math;
     using namespace kairo::foundation::geometry;
 
+    //=========================================================
+    // Primitive Model
+    //
+    // The renderer uses std::variant instead of virtual inheritance. That keeps
+    // ownership explicit, avoids heap allocation per primitive, and lets the BVH
+    // store primitive indices that map directly back to this vector.
+    //=========================================================
+
     struct SpherePrimitive final
     {
         Spheref Sphere;
@@ -39,6 +47,7 @@ export namespace kairo::foundation::raytracer
     inline AABBf Bounds(
         const SpherePrimitive& primitive) noexcept
     {
+        // A sphere's world-space AABB is center +/- radius on each axis.
         const Vec3f extent
         {
             primitive.Sphere.Radius,
@@ -55,6 +64,9 @@ export namespace kairo::foundation::raytracer
     inline AABBf Bounds(
         const TrianglePrimitive& primitive) noexcept
     {
+        // Triangle bounds are the component-wise min/max of the three vertices.
+        // A tiny padding prevents exactly flat triangles from producing zero
+        // thickness boxes that are awkward for broadphase ray/AABB tests.
         const Vec3f min
         {
             std::min({ primitive.Triangle.A.x, primitive.Triangle.B.x, primitive.Triangle.C.x }),
@@ -105,6 +117,8 @@ export namespace kairo::foundation::raytracer
         const Rayf& ray,
         std::uint32_t primitiveIndex)
     {
+        // KairoGeometry computes the geometric ray/sphere hit. The ray tracer
+        // wraps that result with primitive and material identity for shading.
         const std::optional<RayHitf> hit =
             RaySphere(ray, primitive.Sphere);
 
@@ -131,6 +145,8 @@ export namespace kairo::foundation::raytracer
         const Rayf& ray,
         std::uint32_t primitiveIndex)
     {
+        // Moller-Trumbore intersection lives in KairoGeometry. UVs are stored as
+        // barycentric B/C weights for future texture coordinates.
         const std::optional<RayHitf> hit =
             RayTriangle(ray, primitive.Triangle);
 

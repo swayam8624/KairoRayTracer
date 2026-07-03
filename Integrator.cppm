@@ -9,6 +9,9 @@ import Kairo.Foundation.RayTracer.Types;
 
 export namespace kairo::foundation::raytracer
 {
+    // Integrator selection is string-based at the executable/parser boundary and
+    // enum-based inside the renderer. That keeps runtime dispatch cheap and
+    // catches typos before rendering starts.
     [[nodiscard]]
     inline RenderMode RenderModeFromString(
         const std::string& value)

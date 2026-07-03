@@ -7,6 +7,12 @@ import Kairo.Foundation.RayTracer;
 
 using namespace kairo::foundation::raytracer;
 
+// Preview executable:
+// - Renders the scene exactly like the CLI.
+// - Saves the PPM artifact.
+// - Opens a GLFW window to display the completed Film.
+//
+// This gives a "real window" without mixing in ImGui/editor architecture.
 namespace
 {
     void PrintUsage()
@@ -51,6 +57,8 @@ int main(
         auto renderScene =
             [&]() -> RenderResult
             {
+                // Re-load the scene for each render so pressing R picks up file
+                // edits made in a text editor.
                 Scene scene =
                     LoadScene(scenePath);
 
@@ -98,6 +106,8 @@ int main(
             },
             [&]() -> Film
             {
+                // The preview layer only asks for a new Film. It does not know
+                // how scenes, BVHs, or integrators work.
                 return renderScene().Image;
             });
 

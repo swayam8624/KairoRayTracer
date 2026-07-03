@@ -28,6 +28,14 @@ export namespace kairo::foundation::raytracer
     using namespace kairo::foundation::geometry;
     namespace spatial = kairo::foundation::spatial;
 
+    //=========================================================
+    // Scene
+    //
+    // Scene is the bridge between render concepts and acceleration structures:
+    // materials/lights/primitives are ray-tracing concepts, while the BVH is a
+    // KairoSpatial concept. The scene owns both and translates between them.
+    //=========================================================
+
     class Scene final
     {
     public:
@@ -53,6 +61,9 @@ export namespace kairo::foundation::raytracer
         std::uint32_t AddMaterial(
             Material material)
         {
+            // Materials are stored in a dense vector. Primitives keep integer
+            // material indices so variants remain small and serialization later
+            // can reference materials by name/index.
             Materials.push_back(std::move(material));
             return static_cast<std::uint32_t>(Materials.size() - 1);
         }
@@ -100,6 +111,9 @@ export namespace kairo::foundation::raytracer
 
         void BuildAcceleration()
         {
+            // SpatialPrimitive is intentionally simpler than a render primitive:
+            // it only needs identity, bounds, and a layer mask. UserID/UserIndex
+            // both map back to Primitives[i] in V1.
             std::vector<spatial::SpatialPrimitive> spatialPrimitives;
             spatialPrimitives.reserve(Primitives.size());
 
@@ -125,6 +139,9 @@ export namespace kairo::foundation::raytracer
             const Rayf& ray,
             RenderStats* stats = nullptr) const
         {
+            // BVH traversal only decides which render primitives are worth exact
+            // testing. The callback performs true sphere/triangle intersections
+            // and returns a SpatialRayHit so KairoSpatial can sort closest hits.
             if (Primitives.empty())
             {
                 return std::nullopt;
@@ -193,6 +210,9 @@ export namespace kairo::foundation::raytracer
         std::optional<SurfaceHit> BruteForceIntersect(
             const Rayf& ray) const
         {
+            // Brute force is kept as a correctness oracle. Tests compare it
+            // against BVH traversal so acceleration can change without silently
+            // changing visible results.
             std::optional<SurfaceHit> closest;
             float closestDistance =
                 std::numeric_limits<float>::infinity();
@@ -218,6 +238,9 @@ export namespace kairo::foundation::raytracer
             float maxDistance,
             RenderStats* stats = nullptr) const
         {
+            // Occlusion uses the "any hit" traversal because shadows do not need
+            // the nearest blocker. This is the acceleration win that makes hard
+            // shadows cheap enough for every light and pixel.
             if (Primitives.empty() || maxDistance <= 0.0f)
             {
                 return false;

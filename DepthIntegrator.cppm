@@ -14,6 +14,8 @@ export namespace kairo::foundation::raytracer
 {
     using namespace kairo::foundation::geometry;
 
+    // Depth rendering ignores material and light. Near hits become white, far
+    // hits become black. This verifies nearest-hit selection and camera rays.
     [[nodiscard]]
     inline Color3f TraceDepth(
         const Scene& scene,

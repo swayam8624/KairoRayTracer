@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
 project(KairoRayTracer LANGUAGES CXX)
 
+# KairoRayTracer is intentionally its own repo/project, not a Foundation
+# subfolder. It consumes the foundation stack the way a real graphics artifact
+# would: Math -> Geometry -> Spatial -> renderer.
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -17,6 +21,10 @@ endif()
 if(NOT TARGET KairoSpatial)
     set(KAIRO_SPATIAL_SOURCE_DIR "" CACHE PATH "Path to a local KairoSpatial checkout")
 
+    # Dependency resolution order:
+    # 1. Explicit local override for development.
+    # 2. Sibling workspace checkout used on this machine.
+    # 3. GitHub fallback for standalone clone/build.
     if(KAIRO_SPATIAL_SOURCE_DIR AND EXISTS "${KAIRO_SPATIAL_SOURCE_DIR}/CMakeLists.txt")
         add_subdirectory(
             "${KAIRO_SPATIAL_SOURCE_DIR}"
@@ -42,12 +50,17 @@ find_package(OpenGL REQUIRED)
 find_path(GLFW_INCLUDE_DIR GLFW/glfw3.h PATHS /opt/homebrew/include /usr/local/include)
 find_library(GLFW_LIBRARY glfw PATHS /opt/homebrew/lib /usr/local/lib)
 
+# GLFW/OpenGL are linked to the library because PreviewWindow is exported as a
+# module. CLI users still do not create a window unless they run the preview
+# executable.
 if(NOT GLFW_INCLUDE_DIR OR NOT GLFW_LIBRARY)
     message(FATAL_ERROR "GLFW was not found. Install it with: brew install glfw")
 endif()
 
 add_library(KairoRayTracer)
 
+# C++23 module file set. Keep this list ordered roughly from leaf concepts to
+# high-level orchestration so module dependency errors are easier to read.
 target_sources(KairoRayTracer
     PUBLIC
         FILE_SET CXX_MODULES

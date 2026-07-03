@@ -14,6 +14,14 @@ export namespace kairo::foundation::raytracer
     using namespace kairo::foundation::math;
     using namespace kairo::foundation::geometry;
 
+    //=========================================================
+    // Camera
+    //
+    // This is a pinhole camera: every pixel emits one ray through an imaginary
+    // film plane. There is no lens radius, focus distance, or motion blur in V1.
+    // The goal is to prove view basis math and primary-ray generation.
+    //=========================================================
+
     class Camera final
     {
     public:
@@ -48,6 +56,12 @@ export namespace kairo::foundation::raytracer
             Camera camera;
             camera.Position = position;
             camera.Forward = SafeNormalize(target - position, Vec3f::Forward());
+
+            // Right-handed camera basis:
+            // - Forward points from camera to target.
+            // - Right is perpendicular to Forward and the requested world-up.
+            // - Up is recomputed to make the basis orthonormal even if input up
+            //   was slightly tilted.
             camera.Right = SafeNormalize(Cross(camera.Forward, worldUp), Vec3f::UnitX());
             camera.Up = SafeNormalize(Cross(camera.Right, camera.Forward), Vec3f::Up());
             camera.VerticalFOVDegrees = verticalFOVDegrees;
@@ -66,6 +80,10 @@ export namespace kairo::foundation::raytracer
             const float radians =
                 VerticalFOVDegrees * std::numbers::pi_v<float> / 180.0f;
 
+            // The film plane is one unit in front of the camera. FOV controls
+            // its height; aspect controls its width. Pixel coordinates are then
+            // remapped from [0, 1] to [-halfWidth, halfWidth] and
+            // [-halfHeight, halfHeight].
             const float filmHalfHeight =
                 std::tan(radians * 0.5f);
 

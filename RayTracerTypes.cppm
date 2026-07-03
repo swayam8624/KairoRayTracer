@@ -13,6 +13,14 @@ export namespace kairo::foundation::raytracer
 {
     using namespace kairo::foundation::math;
 
+    //=========================================================
+    // Render Modes
+    //
+    // V1 deliberately exposes several "debug integrators". A beauty render can
+    // hide math bugs, while normal/depth/shadow/BVH images isolate one system at
+    // a time. This is how offline renderers are usually debugged.
+    //=========================================================
+
     enum class RenderMode : std::uint8_t
     {
         Normal,
@@ -22,6 +30,9 @@ export namespace kairo::foundation::raytracer
         BVHHeatmap
     };
 
+    // RenderSettings is the small contract between scene parsing, command-line
+    // overrides, and the renderer. Keep it plain-data so tests and examples can
+    // construct scenes without hidden ownership or services.
     struct RenderSettings final
     {
         std::uint32_t Width = 800;
@@ -35,6 +46,9 @@ export namespace kairo::foundation::raytracer
         Color3f Background = { 0.02f, 0.03f, 0.05f };
     };
 
+    // RenderStats is intentionally approximate and cheap. It is not a profiler;
+    // it is a sanity view that answers: did rays fire, did the BVH traverse, and
+    // is a mode unexpectedly doing too much work?
     struct RenderStats final
     {
         std::uint64_t PrimaryRays = 0;
@@ -46,6 +60,9 @@ export namespace kairo::foundation::raytracer
         double RenderMilliseconds = 0.0;
     };
 
+    // SurfaceHit is richer than SpatialRayHit because shading needs material,
+    // normal, UV, and render primitive identity. Spatial remains a broadphase
+    // acceleration layer; this struct is the renderer's shading record.
     struct SurfaceHit final
     {
         bool Hit = false;
@@ -57,6 +74,8 @@ export namespace kairo::foundation::raytracer
         std::uint32_t MaterialIndex = std::numeric_limits<std::uint32_t>::max();
     };
 
+    // SceneParseError is separate from std::runtime_error so tests and tools can
+    // inspect exact source locations without parsing error strings.
     struct SceneParseError final
     {
         std::uint32_t Line = 0;

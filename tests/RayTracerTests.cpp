@@ -14,6 +14,10 @@ using namespace kairo::foundation::raytracer;
 using namespace kairo::foundation::math;
 using namespace kairo::foundation::geometry;
 
+// These tests are intentionally small and deterministic. They are not image
+// golden tests yet; instead they validate the contracts that make images sane:
+// parsing, camera rays, primitive hits, BVH equivalence, shadows, rendering, and
+// PPM output.
 namespace
 {
     const char* MinimalSceneText()
@@ -37,6 +41,8 @@ sphere 0 1 0 1 red
 
 TEST_CASE("Scene parser loads valid kairo scene", "[RayTracer][Parser]")
 {
+    // A valid scene must produce all runtime systems: settings, camera,
+    // materials, lights, primitives, and acceleration.
     const Scene scene =
         ParseSceneText(MinimalSceneText());
 
@@ -108,6 +114,8 @@ TEST_CASE("Primitive intersections return material and distance", "[RayTracer][P
 
 TEST_CASE("Scene BVH intersection matches brute force", "[RayTracer][Scene]")
 {
+    // The brute-force path is the oracle. If this fails, BVH traversal is
+    // returning a different visible surface than the simple O(n) loop.
     const Scene scene =
         ParseSceneText(MinimalSceneText());
 
@@ -142,6 +150,9 @@ TEST_CASE("Scene shadow occlusion distinguishes blocker and empty direction", "[
 
 TEST_CASE("Renderer produces non-black Whitted image", "[RayTracer][Renderer]")
 {
+    // This is a smoke test for the whole render path. It does not prove beauty,
+    // but it catches black-frame regressions from camera, parser, lighting, or
+    // intersection bugs.
     Scene scene =
         ParseSceneText(MinimalSceneText());
 
@@ -186,4 +197,35 @@ TEST_CASE("PPM writer emits valid header", "[RayTracer][ImageIO]")
     REQUIRE(width == 2);
     REQUIRE(height == 1);
     REQUIRE(maxValue == 255);
+}
+
+TEST_CASE("Bundled scenes parse and build acceleration", "[RayTracer][Scenes]")
+{
+    const std::filesystem::path sceneRoot =
+        std::filesystem::path(__FILE__).parent_path().parent_path() / "scenes";
+
+    const char* sceneNames[] =
+    {
+        "cornell.kairo",
+        "reflective_spheres.kairo",
+        "triangle_floor.kairo",
+        "shadow_lab.kairo",
+        "mirror_hall.kairo",
+        "bvh_stress.kairo",
+        "normal_depth_lab.kairo",
+        "emissive_showcase.kairo",
+        "parser_reference.kairo"
+    };
+
+    for (const char* sceneName : sceneNames)
+    {
+        const Scene scene =
+            LoadScene(sceneRoot / sceneName);
+
+        REQUIRE(scene.Settings.Width > 0);
+        REQUIRE(scene.Settings.Height > 0);
+        REQUIRE(!scene.Materials.empty());
+        REQUIRE(!scene.Primitives.empty());
+        REQUIRE(scene.HasAcceleration());
+    }
 }

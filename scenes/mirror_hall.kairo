@@ -1,0 +1,29 @@
+# Mirror hall
+# Purpose:
+# - Stress-tests recursive mirror rays.
+# - Good for checking max recursion depth and reflection tint.
+resolution 900 520
+samples 1
+background 0.015 0.018 0.03
+integrator whitted
+camera 0 1.45 7.4 0 1.05 0 0 1 0 35
+
+material floor lambert 0.50 0.52 0.56
+material wall lambert 0.62 0.66 0.72
+material mirror mirror 0.95 0.97 1.00
+material warm lambert 0.95 0.38 0.12
+material cool lambert 0.12 0.55 0.92
+
+light point 0 4.4 2.8 1.0 0.90 0.78 28.0
+light point -3 2.2 3.5 0.35 0.55 1.0 7.0
+
+triangle -5 0 -5  5 0 -5  5 0 5 floor
+triangle -5 0 -5  5 0 5  -5 0 5 floor
+triangle -4 0 -4  -4 3.2 -4  -4 3.2 4 wall
+triangle -4 0 -4  -4 3.2 4  -4 0 4 wall
+triangle 4 0 -4  4 0 4  4 3.2 4 wall
+triangle 4 0 -4  4 3.2 4  4 3.2 -4 wall
+sphere -1.6 0.72 0.2 0.72 mirror
+sphere 0.0 0.55 -0.9 0.55 warm
+sphere 1.45 0.78 0.15 0.78 mirror
+sphere 2.5 0.45 -0.9 0.45 cool

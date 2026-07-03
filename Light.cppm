@@ -9,6 +9,9 @@ export namespace kairo::foundation::raytracer
 {
     using namespace kairo::foundation::math;
 
+    // PointLight is an infinitesimal emitter. It gives hard-edged shadows
+    // because there is no area to sample. That is useful in V1 because shadow
+    // correctness is visually obvious.
     struct PointLight final
     {
         Vec3f Position = Vec3f::Zero();

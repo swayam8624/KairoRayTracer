@@ -18,6 +18,14 @@ export namespace kairo::foundation::raytracer
 {
     using namespace kairo::foundation::geometry;
 
+    //=========================================================
+    // Renderer
+    //
+    // The renderer is intentionally boring: loop pixels, generate primary rays,
+    // ask the active integrator for color, and write the film. This makes it
+    // easy to separate bugs in camera math, intersection, shading, or output.
+    //=========================================================
+
     struct RenderResult final
     {
         Film Image;
@@ -41,6 +49,8 @@ export namespace kairo::foundation::raytracer
             {
                 for (std::uint32_t x = 0; x < scene.Settings.Width; ++x)
                 {
+                    // V1 uses deterministic center samples. The sample loop is
+                    // already shaped for future jittered sampling/anti-aliasing.
                     Color3f accumulated = Color3f::Black();
 
                     for (std::uint32_t sample = 0; sample < scene.Settings.SamplesPerPixel; ++sample)

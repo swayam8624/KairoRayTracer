@@ -25,6 +25,14 @@ export namespace kairo::foundation::raytracer
 {
     using namespace kairo::foundation::math;
 
+    //=========================================================
+    // Scene Parser
+    //
+    // The .kairo format is deliberately line-oriented for V1. Every command is
+    // visible in plain text, parser errors can point to one line/column, and the
+    // renderer avoids a JSON dependency while the scene vocabulary is still tiny.
+    //=========================================================
+
     class SceneParseException final : public std::runtime_error
     {
     public:
@@ -64,6 +72,8 @@ export namespace kairo::foundation::raytracer
         inline std::vector<Token> Tokenize(
             const std::string& line)
         {
+            // Tokenization is whitespace-based. `#` starts a comment anywhere on
+            // the line, which makes scene files double as readable render notes.
             std::vector<Token> tokens;
             std::size_t i = 0;
 
@@ -122,6 +132,8 @@ export namespace kairo::foundation::raytracer
             std::size_t expected,
             std::string_view usage)
         {
+            // Command arity is strict on purpose. A renderer should fail loudly
+            // when a scene says something ambiguous instead of guessing.
             if (tokens.size() != expected)
             {
                 const std::uint32_t column =
@@ -141,6 +153,8 @@ export namespace kairo::foundation::raytracer
             const Token& token,
             std::uint32_t line)
         {
+            // std::from_chars avoids locale surprises and lets us verify that
+            // the whole token was consumed. "1abc" should not parse as 1.
             float value = 0.0f;
             const char* begin = token.Text.data();
             const char* end = begin + token.Text.size();
@@ -229,6 +243,9 @@ export namespace kairo::foundation::raytracer
     inline Scene ParseSceneText(
         const std::string& text)
     {
+        // First pass and construction happen together because V1 references only
+        // earlier material names. This keeps the grammar simple: define material
+        // before using it.
         Scene scene;
         std::unordered_map<std::string, std::uint32_t> materialIndices;
 
@@ -296,6 +313,9 @@ export namespace kairo::foundation::raytracer
             }
             else if (command == "material")
             {
+                // Emissive materials may provide explicit emission. If omitted,
+                // albedo becomes the visible emission color so small demo scenes
+                // can be concise.
                 if (tokens.size() != 6 && tokens.size() != 9)
                 {
                     parser_detail::Fail(line, tokens[0].Column, "usage: material name type r g b [emitR emitG emitB].");
@@ -404,6 +424,8 @@ export namespace kairo::foundation::raytracer
                 static_cast<float>(scene.Settings.Width) /
                     static_cast<float>(scene.Settings.Height));
 
+        // Build the BVH after all primitives are known. If parsing fails before
+        // this point, no half-built scene escapes to the renderer.
         scene.BuildAcceleration();
         return scene;
     }

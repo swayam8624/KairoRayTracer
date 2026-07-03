@@ -1,0 +1,23 @@
+# Normal/depth lab
+# Purpose:
+# - Intentionally simple shapes make normal and depth modes easy to read.
+# - Use normal and depth modes more than whitted for this scene.
+resolution 720 480
+samples 1
+background 0.02 0.025 0.035
+integrator normal
+camera 0 1.7 6.3 0 0.95 0 0 1 0 40
+
+material gray lambert 0.65 0.65 0.68
+material teal lambert 0.08 0.85 0.80
+material violet lambert 0.55 0.20 0.95
+material orange lambert 0.95 0.48 0.12
+
+light point 0 4.5 3.0 1 1 1 14
+
+triangle -4 0 -4  4 0 -4  4 0 4 gray
+triangle -4 0 -4  4 0 4  -4 0 4 gray
+sphere -1.8 0.55 -0.6 0.55 teal
+sphere 0.0 0.95 -0.3 0.95 violet
+sphere 1.95 0.35 -0.7 0.35 orange
+triangle -0.85 0.03 1.3  0.85 0.03 1.3  0.0 1.55 1.25 teal
