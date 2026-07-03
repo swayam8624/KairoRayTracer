@@ -201,6 +201,12 @@ export namespace kairo::foundation::raytracer
                 return TraceShadowMask(scene, ray, stats);
             case RenderMode::BVHHeatmap:
                 return TraceBVHHeatmap(scene, ray, stats);
+            case RenderMode::Albedo:
+            case RenderMode::PrimitiveID:
+            case RenderMode::UV:
+            case RenderMode::Barycentric:
+            case RenderMode::AccelerationDifference:
+                return TraceDebugMode(scene, ray, stats);
             }
 
             return Color3f::Black();

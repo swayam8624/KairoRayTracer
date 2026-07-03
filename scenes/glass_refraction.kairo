@@ -1,0 +1,23 @@
+# Glass refraction lab
+# Purpose:
+# - Exercises glass material, Schlick Fresnel, and refraction rays.
+# - Render with whitted, normal, depth, uv, and accel_diff for debugging.
+resolution 800 520
+samples 4
+background 0.02 0.025 0.04
+integrator whitted
+camera 0 1.6 6.8 0 0.9 0 0 1 0 38
+
+material floor lambert 0.52 0.53 0.56
+material red lambert 0.85 0.10 0.08
+material blue lambert 0.08 0.25 0.88
+material glass glass 0.88 0.96 1.00 1.45
+
+light point -2.8 4.6 2.6 1.0 0.94 0.82 28.0
+light point 2.6 3.2 2.3 0.45 0.65 1.0 8.0
+
+triangle -5 0 -5  5 0 -5  5 0 5 floor
+triangle -5 0 -5  5 0 5  -5 0 5 floor
+sphere -1.35 0.65 -0.4 0.65 red
+sphere 0.15 0.95 0.0 0.95 glass
+sphere 1.75 0.65 -0.2 0.65 blue

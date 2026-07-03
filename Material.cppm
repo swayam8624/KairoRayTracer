@@ -15,6 +15,7 @@ export namespace kairo::foundation::raytracer
     // V1 materials are intentionally small:
     // - Lambert: matte diffuse surface.
     // - Mirror: perfect specular reflection.
+    // - Glass: reflection plus refraction using Schlick Fresnel.
     // - Emissive: visible light-emitting surface.
     // Roughness/metallic/IOR are stored now so the file format can grow toward
     // PBR/path tracing without replacing the public material record.
@@ -24,6 +25,7 @@ export namespace kairo::foundation::raytracer
     {
         Lambert,
         Mirror,
+        Glass,
         Emissive
     };
 
@@ -46,6 +48,7 @@ export namespace kairo::foundation::raytracer
         {
         case MaterialType::Lambert: return "lambert";
         case MaterialType::Mirror: return "mirror";
+        case MaterialType::Glass: return "glass";
         case MaterialType::Emissive: return "emissive";
         }
 

@@ -307,7 +307,8 @@ TEST_CASE("Bundled scenes parse and build acceleration", "[RayTracer][Scenes]")
         "bvh_stress.kairo",
         "normal_depth_lab.kairo",
         "emissive_showcase.kairo",
-        "parser_reference.kairo"
+        "parser_reference.kairo",
+        "glass_refraction.kairo"
     };
 
     for (const char* sceneName : sceneNames)
@@ -320,5 +321,28 @@ TEST_CASE("Bundled scenes parse and build acceleration", "[RayTracer][Scenes]")
         REQUIRE(!scene.Materials.empty());
         REQUIRE(!scene.Primitives.empty());
         REQUIRE(scene.HasAcceleration());
+    }
+}
+
+TEST_CASE("Acceleration difference mode is black when BVH matches brute force", "[RayTracer][Debug]")
+{
+    Scene scene =
+        ParseSceneText(MinimalSceneText());
+
+    scene.Settings.Mode = RenderMode::AccelerationDifference;
+    scene.Settings.Width = 16;
+    scene.Settings.Height = 12;
+    scene.MainCamera.AspectRatio =
+        static_cast<float>(scene.Settings.Width) /
+        static_cast<float>(scene.Settings.Height);
+
+    const RenderResult result =
+        Renderer{}.Render(scene);
+
+    for (const Color3f& pixel : result.Image.Pixels())
+    {
+        REQUIRE(pixel.r == Catch::Approx(0.0f).margin(1.0e-5f));
+        REQUIRE(pixel.g == Catch::Approx(0.0f).margin(1.0e-5f));
+        REQUIRE(pixel.b == Catch::Approx(0.0f).margin(1.0e-5f));
     }
 }

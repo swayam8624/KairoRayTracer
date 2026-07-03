@@ -143,6 +143,7 @@ scenes/bvh_stress.kairo
 scenes/normal_depth_lab.kairo
 scenes/emissive_showcase.kairo
 scenes/parser_reference.kairo
+scenes/glass_refraction.kairo
 ```
 
 Scene purpose:
@@ -157,6 +158,7 @@ bvh_stress.kairo         many primitives for bvh_heatmap traversal visualization
 normal_depth_lab.kairo   clean shapes for normal/depth render modes
 emissive_showcase.kairo  visible emissive geometry plus colored lights
 parser_reference.kairo   compact reference for every V1 scene command
+glass_refraction.kairo   glass material and Schlick Fresnel/refraction test
 ```
 
 Render every main debug output for the default scene:
@@ -231,5 +233,10 @@ normal       checks surface normals and winding
 depth        checks nearest-hit distance and camera framing
 shadow_mask  checks light visibility and self-intersection bias
 bvh_heatmap  checks acceleration traversal cost
+albedo       checks material assignment without lighting
+primitive_id checks primitive identity and parser ordering
+uv           checks triangle UV/barycentric preservation
+barycentric  checks triangle interpolation coordinates
+accel_diff   checks BVH output against brute force
 whitted      combines geometry, BVH, materials, lights, shadows, and reflection
 ```

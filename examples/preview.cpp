@@ -19,7 +19,7 @@ namespace
     void PrintUsage()
     {
         std::cout
-            << "Usage: KairoRayTracerPreview <scene.kairo> [--mode whitted|normal|depth|shadow_mask|bvh_heatmap] [--width px --height px] [--samples n]\n";
+            << "Usage: KairoRayTracerPreview <scene.kairo> [--mode whitted|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--width px --height px] [--samples n]\n";
     }
 }
 

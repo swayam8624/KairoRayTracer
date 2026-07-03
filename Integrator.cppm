@@ -21,6 +21,11 @@ export namespace kairo::foundation::raytracer
         if (value == "whitted") return RenderMode::Whitted;
         if (value == "shadow_mask") return RenderMode::ShadowMask;
         if (value == "bvh_heatmap") return RenderMode::BVHHeatmap;
+        if (value == "albedo") return RenderMode::Albedo;
+        if (value == "primitive_id") return RenderMode::PrimitiveID;
+        if (value == "uv") return RenderMode::UV;
+        if (value == "barycentric") return RenderMode::Barycentric;
+        if (value == "accel_diff") return RenderMode::AccelerationDifference;
 
         throw std::invalid_argument("Unknown render mode: " + value);
     }
@@ -36,6 +41,11 @@ export namespace kairo::foundation::raytracer
         case RenderMode::Whitted: return "beauty.ppm";
         case RenderMode::ShadowMask: return "shadow_mask.ppm";
         case RenderMode::BVHHeatmap: return "bvh_heatmap.ppm";
+        case RenderMode::Albedo: return "albedo.ppm";
+        case RenderMode::PrimitiveID: return "primitive_id.ppm";
+        case RenderMode::UV: return "uv.ppm";
+        case RenderMode::Barycentric: return "barycentric.ppm";
+        case RenderMode::AccelerationDifference: return "accel_diff.ppm";
         }
 
         return "output.ppm";

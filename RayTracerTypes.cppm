@@ -27,7 +27,12 @@ export namespace kairo::foundation::raytracer
         Depth,
         Whitted,
         ShadowMask,
-        BVHHeatmap
+        BVHHeatmap,
+        Albedo,
+        PrimitiveID,
+        UV,
+        Barycentric,
+        AccelerationDifference
     };
 
     // RenderSettings is the small contract between scene parsing, command-line
@@ -163,6 +168,11 @@ export namespace kairo::foundation::raytracer
         case RenderMode::Whitted: return "whitted";
         case RenderMode::ShadowMask: return "shadow_mask";
         case RenderMode::BVHHeatmap: return "bvh_heatmap";
+        case RenderMode::Albedo: return "albedo";
+        case RenderMode::PrimitiveID: return "primitive_id";
+        case RenderMode::UV: return "uv";
+        case RenderMode::Barycentric: return "barycentric";
+        case RenderMode::AccelerationDifference: return "accel_diff";
         }
 
         return "unknown";
