@@ -13,6 +13,7 @@ import Kairo.Foundation.RayTracer.Types;
 import Kairo.Foundation.RayTracer.Material;
 import Kairo.Foundation.RayTracer.Light;
 import Kairo.Foundation.RayTracer.Scene;
+import Kairo.Foundation.RayTracer.Shading;
 
 export namespace kairo::foundation::raytracer
 {
@@ -79,7 +80,7 @@ export namespace kairo::foundation::raytracer
                 ++stats->MissCount;
             }
 
-            return scene.Settings.Background;
+            return scene.SampleEnvironment(ray.Direction);
         }
 
         if (stats)
@@ -93,6 +94,9 @@ export namespace kairo::foundation::raytracer
 
         const Material& material =
             scene.Materials.at(hit->MaterialIndex);
+
+        const Color3f albedo =
+            EvaluateAlbedo(scene, *hit);
 
         if (material.Type == MaterialType::Emissive)
         {
@@ -118,7 +122,7 @@ export namespace kairo::foundation::raytracer
                 ++stats->ReflectionRays;
             }
 
-            return material.Albedo *
+            return albedo *
                 TraceWhitted(scene, reflectionRay, depth + 1, stats);
         }
 
@@ -181,12 +185,12 @@ export namespace kairo::foundation::raytracer
                 stats->ReflectionRays += 2u;
             }
 
-            return material.Albedo *
+            return albedo *
                 (reflected * fresnel + refracted * (1.0f - fresnel));
         }
 
         Color3f color =
-            material.Albedo * 0.10f;
+            albedo * 0.10f;
 
         for (const PointLight& light : scene.Lights)
         {
@@ -233,7 +237,7 @@ export namespace kairo::foundation::raytracer
                 light.Intensity / std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
 
             color +=
-                material.Albedo *
+                albedo *
                 light.Color *
                 (nDotL * attenuation);
         }
@@ -295,7 +299,7 @@ export namespace kairo::foundation::raytracer
                     light.Intensity / std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
 
                 color +=
-                    material.Albedo *
+                    albedo *
                     light.Color *
                     (nDotL * attenuation / static_cast<float>(samples));
             }
@@ -441,7 +445,7 @@ export namespace kairo::foundation::raytracer
 
         if (scene.Settings.Mode == RenderMode::Albedo)
         {
-            return scene.Materials.at(hit->MaterialIndex).Albedo;
+            return EvaluateAlbedo(scene, *hit);
         }
 
         if (scene.Settings.Mode == RenderMode::PrimitiveID)

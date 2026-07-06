@@ -33,7 +33,8 @@ export namespace kairo::foundation::raytracer
         std::uint32_t x,
         std::uint32_t y,
         std::uint32_t sampleIndex,
-        std::uint32_t samplesPerPixel) noexcept
+        std::uint32_t samplesPerPixel,
+        std::uint32_t seedOffset = 0) noexcept
     {
         if (samplesPerPixel <= 1u)
         {
@@ -53,7 +54,8 @@ export namespace kairo::foundation::raytracer
         const std::uint32_t seed =
             x * 73856093u ^
             y * 19349663u ^
-            sampleIndex * 83492791u;
+            sampleIndex * 83492791u ^
+            seedOffset * 2654435761u;
 
         const float jitterX =
             Hash01(seed);

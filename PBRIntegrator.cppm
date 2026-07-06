@@ -14,6 +14,7 @@ import Kairo.Foundation.RayTracer.Types;
 import Kairo.Foundation.RayTracer.Material;
 import Kairo.Foundation.RayTracer.Light;
 import Kairo.Foundation.RayTracer.Scene;
+import Kairo.Foundation.RayTracer.Shading;
 
 export namespace kairo::foundation::raytracer
 {
@@ -80,7 +81,7 @@ export namespace kairo::foundation::raytracer
                 ++stats->MissCount;
             }
 
-            return scene.Settings.Background;
+            return scene.SampleEnvironment(ray.Direction);
         }
 
         if (stats)
@@ -90,6 +91,9 @@ export namespace kairo::foundation::raytracer
 
         const Material& material =
             scene.Materials.at(hit->MaterialIndex);
+
+        const Color3f albedo =
+            EvaluateAlbedo(scene, *hit);
 
         if (material.Type == MaterialType::Emissive)
         {
@@ -109,10 +113,10 @@ export namespace kairo::foundation::raytracer
             { 0.04f, 0.04f, 0.04f };
 
         const Color3f f0 =
-            dielectricF0 * (1.0f - metallic) + material.Albedo * metallic;
+            dielectricF0 * (1.0f - metallic) + albedo * metallic;
 
         Color3f color =
-            material.Albedo * 0.025f;
+            albedo * 0.025f;
 
         for (const PointLight& light : scene.Lights)
         {
@@ -181,7 +185,7 @@ export namespace kairo::foundation::raytracer
                     std::max(4.0f * nDotV * nDotL, 1.0e-5f));
 
             const Color3f diffuse =
-                material.Albedo *
+                albedo *
                 ((1.0f - metallic) / std::numbers::pi_v<float>);
 
             const float attenuation =
@@ -267,7 +271,7 @@ export namespace kairo::foundation::raytracer
                         std::max(4.0f * nDotV * nDotL, 1.0e-5f));
 
                 const Color3f diffuse =
-                    material.Albedo *
+                    albedo *
                     ((1.0f - metallic) / std::numbers::pi_v<float>);
 
                 const float attenuation =

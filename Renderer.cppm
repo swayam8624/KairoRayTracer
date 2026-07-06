@@ -93,7 +93,8 @@ export namespace kairo::foundation::raytracer
                                 x,
                                 y,
                                 sample,
-                                scene.Settings.SamplesPerPixel);
+                                scene.Settings.SamplesPerPixel,
+                                scene.Settings.SampleSeed);
 
                         const float u =
                             (static_cast<float>(x) + pixelSample.dx) /
@@ -219,6 +220,7 @@ export namespace kairo::foundation::raytracer
                     x * 73856093u ^
                     y * 19349663u ^
                     sample * 83492791u ^
+                    scene.Settings.SampleSeed * 2654435761u ^
                     0x9e3779b9u;
 
                 return TracePath(scene, ray, 0, rng, stats);

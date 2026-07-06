@@ -1,0 +1,30 @@
+# Textures + environment showcase
+# Purpose:
+# - Loads PPM textures through the scene DSL.
+# - Binds one texture to a lambert material.
+# - Uses a texture environment for miss radiance/reflections/path lighting.
+# Suggested:
+#   ./build/KairoRayTracerCLI scenes/textured_environment_showcase.kairo --mode whitted --output outputs/textured_environment.png
+#   ./build/KairoRayTracerCLI scenes/textured_environment_showcase.kairo --mode path --passes 16 --output outputs/textured_environment_path.hdr
+resolution 800 520
+samples 4
+background 0.01 0.015 0.025
+texture checker assets/checker.ppm bilinear
+texture studio_env assets/studio_environment.ppm bilinear
+environment texture studio_env 1.6
+integrator whitted
+camera 0 1.4 5.8 0 0.85 0 0 1 0 38
+
+material floor lambert 0.72 0.72 0.70
+material panel lambert 1.0 1.0 1.0
+material chrome mirror 0.90 0.94 1.00
+material rough_gold pbr 0.95 0.62 0.22 0.38 0.75
+material_texture panel checker
+
+light area 0 4.2 2.2  2.2 0 0  0 0 1.6  1.0 0.92 0.80 24.0 8
+
+triangle -4 0 -4  4 0 -4  4 0 4 floor
+triangle -4 0 -4  4 0 4  -4 0 4 floor
+obj assets/textured_panel.obj panel 1.0 0 0.05 -1.1
+sphere -1.2 0.65 0.25 0.65 chrome
+sphere 1.35 0.62 -0.15 0.62 rough_gold

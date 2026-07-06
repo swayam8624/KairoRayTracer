@@ -1,6 +1,7 @@
 module;
 
 #include <cstdint>
+#include <limits>
 #include <string>
 
 export module Kairo.Foundation.RayTracer.Material;
@@ -37,9 +38,16 @@ export namespace kairo::foundation::raytracer
         MaterialType Type = MaterialType::Lambert;
         Color3f Albedo = Color3f::White();
         Color3f Emission = Color3f::Black();
+        std::uint32_t AlbedoTextureIndex = std::numeric_limits<std::uint32_t>::max();
         float Roughness = 0.0f;
         float Metallic = 0.0f;
         float IOR = 1.5f;
+
+        [[nodiscard]]
+        bool HasAlbedoTexture() const noexcept
+        {
+            return AlbedoTextureIndex != std::numeric_limits<std::uint32_t>::max();
+        }
     };
 
     [[nodiscard]]

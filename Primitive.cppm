@@ -38,6 +38,14 @@ export namespace kairo::foundation::raytracer
     {
         Trianglef Triangle;
         std::uint32_t MaterialIndex = 0;
+        Vec3f NormalA = Vec3f::Zero();
+        Vec3f NormalB = Vec3f::Zero();
+        Vec3f NormalC = Vec3f::Zero();
+        Vec2f UVA = Vec2f::Zero();
+        Vec2f UVB = Vec2f::Zero();
+        Vec2f UVC = Vec2f::Zero();
+        bool HasVertexNormals = false;
+        bool HasUVs = false;
     };
 
     using Primitive =
@@ -158,13 +166,38 @@ export namespace kairo::foundation::raytracer
         const Vec3f barycentric =
             primitive.Triangle.Barycentric(hit->Point);
 
+        Vec3f normal =
+            hit->Normal;
+
+        if (primitive.HasVertexNormals)
+        {
+            normal =
+                SafeNormalize(
+                    primitive.NormalA * barycentric.x +
+                    primitive.NormalB * barycentric.y +
+                    primitive.NormalC * barycentric.z,
+                    hit->Normal);
+
+            if (Dot(normal, hit->Normal) < 0.0f)
+            {
+                normal = -normal;
+            }
+        }
+
+        const Vec2f uv =
+            primitive.HasUVs
+                ? primitive.UVA * barycentric.x +
+                    primitive.UVB * barycentric.y +
+                    primitive.UVC * barycentric.z
+                : Vec2f{ barycentric.y, barycentric.z };
+
         return SurfaceHit
         {
             true,
             hit->Distance,
             hit->Point,
-            hit->Normal,
-            Vec2f{ barycentric.y, barycentric.z },
+            normal,
+            uv,
             primitiveIndex,
             primitive.MaterialIndex
         };

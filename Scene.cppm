@@ -21,6 +21,9 @@ import Kairo.Foundation.RayTracer.Camera;
 import Kairo.Foundation.RayTracer.Material;
 import Kairo.Foundation.RayTracer.Light;
 import Kairo.Foundation.RayTracer.Primitive;
+import Kairo.Foundation.RayTracer.Texture;
+import Kairo.Foundation.RayTracer.Environment;
+import Kairo.Foundation.RayTracer.Mesh;
 
 export namespace kairo::foundation::raytracer
 {
@@ -45,6 +48,8 @@ export namespace kairo::foundation::raytracer
         std::vector<PointLight> Lights;
         std::vector<AreaLight> AreaLights;
         std::vector<Primitive> Primitives;
+        std::vector<Texture2D> Textures;
+        EnvironmentLight Environment;
 
         [[nodiscard]]
         const spatial::BVH& Acceleration() const noexcept
@@ -67,6 +72,42 @@ export namespace kairo::foundation::raytracer
             // can reference materials by name/index.
             Materials.push_back(std::move(material));
             return static_cast<std::uint32_t>(Materials.size() - 1);
+        }
+
+        [[nodiscard]]
+        std::uint32_t AddTexture(
+            Texture2D texture)
+        {
+            if (texture.Empty())
+            {
+                throw std::invalid_argument("Cannot add an empty texture to the scene.");
+            }
+
+            Textures.push_back(std::move(texture));
+            return static_cast<std::uint32_t>(Textures.size() - 1);
+        }
+
+        [[nodiscard]]
+        Color3f SampleEnvironment(
+            const Vec3f& direction) const
+        {
+            if (!Environment.Enabled)
+            {
+                return Settings.Background;
+            }
+
+            Color3f radiance =
+                Environment.Color;
+
+            if (Environment.TextureIndex < Textures.size())
+            {
+                radiance =
+                    SampleTexture(
+                        Textures.at(Environment.TextureIndex),
+                        DirectionToLatLongUV(direction));
+            }
+
+            return radiance * Environment.Intensity;
         }
 
         void AddSphere(
@@ -100,6 +141,34 @@ export namespace kairo::foundation::raytracer
             {
                 Trianglef::FromPoints(a, b, c),
                 materialIndex
+            };
+
+            if (primitive.Triangle.AreaSquared() <= 1.0e-10f)
+            {
+                throw std::invalid_argument("Triangle primitive is degenerate.");
+            }
+
+            Primitives.push_back(primitive);
+        }
+
+        void AddTriangle(
+            const MeshTriangle& meshTriangle,
+            std::uint32_t materialIndex)
+        {
+            ValidateMaterialIndex(materialIndex);
+
+            TrianglePrimitive primitive
+            {
+                meshTriangle.Triangle,
+                materialIndex,
+                meshTriangle.NormalA,
+                meshTriangle.NormalB,
+                meshTriangle.NormalC,
+                meshTriangle.UVA,
+                meshTriangle.UVB,
+                meshTriangle.UVC,
+                meshTriangle.HasVertexNormals,
+                meshTriangle.HasUVs
             };
 
             if (primitive.Triangle.AreaSquared() <= 1.0e-10f)

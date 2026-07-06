@@ -59,6 +59,8 @@ target_sources(KairoRayTracer
             RayTracerTypes.cppm
             Film.cppm
             ImageIO.cppm
+            Texture.cppm
+            Environment.cppm
             Camera.cppm
             Material.cppm
             Light.cppm
@@ -66,6 +68,7 @@ target_sources(KairoRayTracer
             Mesh.cppm
             OBJLoader.cppm
             Scene.cppm
+            Shading.cppm
             SceneParser.cppm
             Sampler.cppm
             Integrator.cppm
@@ -75,6 +78,7 @@ target_sources(KairoRayTracer
             PBRIntegrator.cppm
             PathIntegrator.cppm
             Renderer.cppm
+            ProgressiveRenderer.cppm
             KairoRayTracer.cppm
 )
 

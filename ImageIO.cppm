@@ -6,6 +6,7 @@ module;
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -69,6 +70,31 @@ export namespace kairo::foundation::raytracer
 
     namespace image_detail
     {
+        [[nodiscard]]
+        inline std::array<std::uint8_t, 4> EncodeRGBE(
+            const Color3f& color) noexcept
+        {
+            const float maximum =
+                std::max({ color.r, color.g, color.b });
+
+            if (!(maximum > 1.0e-32f) || !std::isfinite(maximum))
+            {
+                return { 0u, 0u, 0u, 0u };
+            }
+
+            int exponent = 0;
+            const float normalized =
+                std::frexp(maximum, &exponent) * 256.0f / maximum;
+
+            return
+            {
+                static_cast<std::uint8_t>(std::clamp(color.r * normalized, 0.0f, 255.0f)),
+                static_cast<std::uint8_t>(std::clamp(color.g * normalized, 0.0f, 255.0f)),
+                static_cast<std::uint8_t>(std::clamp(color.b * normalized, 0.0f, 255.0f)),
+                static_cast<std::uint8_t>(exponent + 128)
+            };
+        }
+
         inline void WriteU32BE(
             std::vector<std::uint8_t>& bytes,
             std::uint32_t value)
@@ -234,6 +260,48 @@ export namespace kairo::foundation::raytracer
             static_cast<std::streamsize>(png.size()));
     }
 
+    /// Input: linear film and destination path.
+    /// Output: Radiance RGBE HDR image on disk.
+    /// Task: preserve scene-referred lighting values for exposure studies,
+    /// bloom/compositing experiments, and future tonemapping comparisons.
+    inline void SaveHDR(
+        const Film& film,
+        const std::filesystem::path& path)
+    {
+        if (film.Width() == 0 || film.Height() == 0)
+        {
+            throw std::invalid_argument("Cannot save an empty film.");
+        }
+
+        if (path.has_parent_path())
+        {
+            std::filesystem::create_directories(path.parent_path());
+        }
+
+        std::ofstream out(path, std::ios::binary);
+        if (!out)
+        {
+            throw std::runtime_error("Failed to open HDR output path: " + path.string());
+        }
+
+        out << "#?RADIANCE\n";
+        out << "FORMAT=32-bit_rle_rgbe\n\n";
+        out << "-Y " << film.Height() << " +X " << film.Width() << "\n";
+
+        for (std::uint32_t y = 0; y < film.Height(); ++y)
+        {
+            for (std::uint32_t x = 0; x < film.Width(); ++x)
+            {
+                const std::array<std::uint8_t, 4> rgbe =
+                    image_detail::EncodeRGBE(film.GetPixel(x, y));
+
+                out.write(
+                    reinterpret_cast<const char*>(rgbe.data()),
+                    static_cast<std::streamsize>(rgbe.size()));
+            }
+        }
+    }
+
     inline void SaveImage(
         const Film& film,
         const std::filesystem::path& path)
@@ -244,6 +312,12 @@ export namespace kairo::foundation::raytracer
         if (extension == ".png")
         {
             SavePNG(film, path);
+            return;
+        }
+
+        if (extension == ".hdr")
+        {
+            SaveHDR(film, path);
             return;
         }
 

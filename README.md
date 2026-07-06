@@ -8,10 +8,11 @@ together:
 KairoMath -> KairoGeometry -> KairoSpatial -> rendered image
 ```
 
-The repo is currently in a stabilization freeze: no new integrators, ImGui, GPU,
-glTF, or editor systems. The goal of this pass is trust: deterministic renders,
-validated settings, reproducible benchmark output, and a developer README with
-real images.
+The repo has moved past V1 stabilization into renderer-strengthening work:
+HDR output, environment radiance, PPM texture loading, filtered texture
+sampling, OBJ UV/normal interpolation, MIS-weighted area-light estimates in the
+path tracer, and progressive accumulation are now part of the CPU path. ImGui,
+GPU backends, glTF, and denoising remain out of scope for this phase.
 
 ## Gallery
 
@@ -47,6 +48,19 @@ Render an image:
 ```bash
 ./build/KairoRayTracerCLI scenes/cornell.kairo --mode whitted --output outputs/beauty.png
 open outputs/beauty.png
+```
+
+Render an HDR image without tonemapping/clamping:
+
+```bash
+./build/KairoRayTracerCLI scenes/textured_environment_showcase.kairo --mode path --passes 16 --output outputs/textured_environment_path.hdr
+open outputs/textured_environment_path.hdr
+```
+
+Render with progressive accumulation:
+
+```bash
+./build/KairoRayTracerCLI scenes/path_showcase.kairo --mode path --passes 32 --output outputs/path_progressive.png
 ```
 
 Render at a different resolution:
@@ -85,14 +99,15 @@ compiled only for `KairoRayTracerPreview` when
 ## Implemented Capabilities
 
 ```text
-Geometry: spheres, triangles, OBJ meshes converted to triangles
+Geometry: spheres, triangles, OBJ meshes with UV and normal interpolation
 Acceleration: brute force, SAH BVH, Morton-ordered BVH
-Lighting: point lights, rectangular area lights, hard and soft shadows
-Materials: lambert, mirror, emissive, glass, roughness-metallic PBR
+Lighting: point lights, rectangular area lights, textured/constant environment
+Materials: lambert, mirror, emissive, glass, roughness-metallic PBR, albedo textures
 Modes: whitted, pbr, path, normal, depth, shadow_mask, bvh_heatmap,
        albedo, primitive_id, uv, barycentric, accel_diff
-Output: PPM, PNG, CSV render stats
-Execution: stratified SPP, threaded tiles, deterministic fixed-scene renders
+Output: PPM, PNG, HDR/RGBE, CSV render stats
+Execution: stratified SPP, threaded tiles, deterministic fixed-scene renders,
+           progressive accumulation
 Preview: GLFW image viewer with save, reload, orbit, zoom, and reset controls
 ```
 
@@ -105,16 +120,29 @@ Materials must be declared before primitives that reference them.
 resolution width height
 samples count
 background r g b
+texture name relative_or_absolute_ppm_path [nearest|bilinear]
+environment constant r g b intensity
+environment texture textureName intensity
 integrator whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff
 camera px py pz tx ty tz upx upy upz fovDegrees
 material name lambert|mirror|emissive r g b [emitR emitG emitB]
 material name glass r g b ior
 material name pbr r g b roughness metallic
+material_texture materialName textureName
 light point x y z r g b intensity
 light area px py pz ux uy uz vx vy vz r g b intensity samples
 sphere x y z radius materialName
 triangle ax ay az bx by bz cx cy cz materialName
 obj relative_or_absolute_path materialName scale tx ty tz
+```
+
+Texture notes:
+
+```text
+Only ASCII PPM/P3 textures are loaded in this phase.
+Texture values are interpreted as linear RGB.
+UVs wrap outside [0, 1], which makes repeated checker/material patterns simple.
+OBJ faces may use v, v/vt, v//vn, or v/vt/vn. Polygon faces are fan-triangulated.
 ```
 
 Example scenes:
@@ -126,6 +154,7 @@ glass_refraction.kairo         glass, refraction, and Fresnel
 mesh_showcase.kairo            OBJ loading through triangle primitives
 area_light_soft_shadow.kairo   rectangular area light and soft shadows
 bvh_stress.kairo               acceleration/debug heatmap scene
+textured_environment_showcase.kairo texture loading, OBJ UVs, environment HDR
 ```
 
 ## Debug Modes
@@ -210,6 +239,11 @@ Sphere and triangle hit records
 BVH hit equivalence to brute force, including UV/barycentric data
 Shadow occlusion
 Whitted, PBR, path, OBJ, and area-light render smoke tests
+HDR output headers
+Texture loading, nearest/bilinear filtering, material texture binding
+Environment radiance sampling
+OBJ UV and vertex normal preservation
+Progressive path accumulation determinism
 Path determinism and finite/no-NaN pixels
 Single-thread versus multi-thread render equality
 SPP 1, 4, and 16 render stability
@@ -237,13 +271,11 @@ ThreadCount > 1024
 ## Deferred
 
 ```text
-Progressive rendering
-HDR output and environment lighting
-Texture loading and filtered texture sampling
-Normal interpolation from OBJ vertex normals
-Per-pixel traversal analytics CSV
-Multiple importance sampling
 Denoising experiments
+Image texture formats beyond ASCII PPM/P3
+Environment importance sampling
+Microfacet BSDF sampling for the path tracer
+Per-pixel traversal analytics CSV
 ImGui debug/editor UI
 GPU backend
 glTF loading

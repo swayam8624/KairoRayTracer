@@ -163,6 +163,70 @@ TEST_CASE("Scene parser reports line and column for invalid input", "[RayTracer]
     }
 }
 
+TEST_CASE("Scene parser binds texture and environment commands", "[RayTracer][Parser][Texture]")
+{
+    const std::filesystem::path directory =
+        std::filesystem::temp_directory_path();
+
+    const std::filesystem::path texturePath =
+        directory / "kairo_raytracer_checker.ppm";
+
+    {
+        std::ofstream out(texturePath);
+        out
+            << "P3\n"
+            << "2 2\n"
+            << "255\n"
+            << "255 0 0  0 255 0\n"
+            << "0 0 255  255 255 255\n";
+    }
+
+    const Scene scene =
+        ParseSceneText(
+            "resolution 8 8\n"
+            "samples 1\n"
+            "background 0 0 0\n"
+            "texture checker kairo_raytracer_checker.ppm nearest\n"
+            "environment texture checker 2\n"
+            "integrator albedo\n"
+            "camera 0 0 3 0 0 0 0 1 0 45\n"
+            "material textured lambert 1 1 1\n"
+            "material_texture textured checker\n"
+            "sphere 0 0 0 1 textured\n",
+            directory);
+
+    REQUIRE(scene.Textures.size() == 1);
+    REQUIRE(scene.Materials.at(0).HasAlbedoTexture());
+    REQUIRE(scene.Environment.Enabled);
+    REQUIRE(scene.SampleEnvironment(Vec3f::UnitX()).r > 0.0f);
+}
+
+TEST_CASE("Texture sampling supports nearest and bilinear filtering", "[RayTracer][Texture]")
+{
+    Texture2D texture;
+    texture.Name = "test";
+    texture.Width = 2;
+    texture.Height = 2;
+    texture.Filter = TextureFilter::Nearest;
+    texture.Pixels =
+    {
+        Color3f{ 1.0f, 0.0f, 0.0f },
+        Color3f{ 0.0f, 1.0f, 0.0f },
+        Color3f{ 0.0f, 0.0f, 1.0f },
+        Color3f{ 1.0f, 1.0f, 1.0f }
+    };
+
+    REQUIRE(SampleTexture(texture, Vec2f{ 0.1f, 0.9f }).r == Catch::Approx(1.0f));
+
+    texture.Filter = TextureFilter::Bilinear;
+    const Color3f center =
+        SampleTexture(texture, Vec2f{ 0.5f, 0.5f });
+
+    REQUIRE(center.r == Catch::Approx(0.5f).margin(1.0e-5f));
+    REQUIRE(center.g == Catch::Approx(0.5f).margin(1.0e-5f));
+    REQUIRE(center.b == Catch::Approx(0.5f).margin(1.0e-5f));
+}
+
 TEST_CASE("Camera center ray points toward target", "[RayTracer][Camera]")
 {
     const Camera camera =
@@ -341,6 +405,24 @@ TEST_CASE("Path mode renders deterministic finite image", "[RayTracer][Renderer]
     RequireImagesNear(first.Image, second.Image, 0.0f);
 }
 
+TEST_CASE("Progressive path render accumulates deterministic finite passes", "[RayTracer][Renderer]")
+{
+    Scene scene =
+        LoadScene(SceneRoot() / "path_showcase.kairo");
+
+    ConfigureTinyRender(scene, RenderMode::Path, 12, 8, 4, 1);
+
+    const ProgressiveRenderResult first =
+        RenderProgressive(scene, 3);
+
+    const ProgressiveRenderResult second =
+        RenderProgressive(scene, 3);
+
+    REQUIRE(first.CompletedPasses == 3);
+    RequireFiniteImage(first.Image);
+    RequireImagesNear(first.Image, second.Image, 0.0f);
+}
+
 TEST_CASE("OBJ mesh scene loads and renders", "[RayTracer][Renderer]")
 {
     Scene scene =
@@ -353,6 +435,59 @@ TEST_CASE("OBJ mesh scene loads and renders", "[RayTracer][Renderer]")
 
     RequireFiniteImage(result.Image);
     REQUIRE(HasNonBlackPixel(result.Image));
+}
+
+TEST_CASE("OBJ loader preserves UVs and smooth normals", "[RayTracer][OBJ]")
+{
+    const std::filesystem::path objPath =
+        std::filesystem::temp_directory_path() / "kairo_raytracer_uv_normal.obj";
+
+    {
+        std::ofstream out(objPath);
+        out
+            << "v 0 0 0\n"
+            << "v 1 0 0\n"
+            << "v 0 1 0\n"
+            << "vt 0 0\n"
+            << "vt 1 0\n"
+            << "vt 0 1\n"
+            << "vn 0 0 1\n"
+            << "vn 0 0 1\n"
+            << "vn 0 0 1\n"
+            << "f 1/1/1 2/2/2 3/3/3\n";
+    }
+
+    const TriangleMesh mesh =
+        LoadOBJMesh(objPath);
+
+    REQUIRE(mesh.Triangles.size() == 1);
+    REQUIRE(mesh.Triangles[0].HasUVs);
+    REQUIRE(mesh.Triangles[0].HasVertexNormals);
+
+    TrianglePrimitive primitive
+    {
+        mesh.Triangles[0].Triangle,
+        0,
+        mesh.Triangles[0].NormalA,
+        mesh.Triangles[0].NormalB,
+        mesh.Triangles[0].NormalC,
+        mesh.Triangles[0].UVA,
+        mesh.Triangles[0].UVB,
+        mesh.Triangles[0].UVC,
+        mesh.Triangles[0].HasVertexNormals,
+        mesh.Triangles[0].HasUVs
+    };
+
+    const auto hit =
+        Intersect(
+            primitive,
+            Rayf::FromOriginDirection(Vec3f{ 0.25f, 0.25f, 1.0f }, Vec3f{ 0.0f, 0.0f, -1.0f }),
+            0);
+
+    REQUIRE(hit.has_value());
+    REQUIRE(hit->Normal.z == Catch::Approx(1.0f).margin(1.0e-5f));
+    REQUIRE(hit->UV.x == Catch::Approx(0.25f).margin(1.0e-5f));
+    REQUIRE(hit->UV.y == Catch::Approx(0.25f).margin(1.0e-5f));
 }
 
 TEST_CASE("Area light soft-shadow scene renders", "[RayTracer][Renderer]")
@@ -519,6 +654,33 @@ TEST_CASE("PNG writer emits valid signature", "[RayTracer][ImageIO]")
     REQUIRE(ReadU32BE(header + 20) == 1);
 }
 
+TEST_CASE("HDR writer emits Radiance header and dimensions", "[RayTracer][ImageIO]")
+{
+    Film film(2, 1);
+    film.SetPixel(0, 0, Color3f{ 4.0f, 2.0f, 1.0f });
+    film.SetPixel(1, 0, Color3f::Black());
+
+    const std::filesystem::path outputPath =
+        std::filesystem::temp_directory_path() / "kairo_raytracer_test.hdr";
+
+    SaveHDR(film, outputPath);
+
+    std::ifstream in(outputPath, std::ios::binary);
+    std::string firstLine;
+    std::string formatLine;
+    std::string blankLine;
+    std::string dimensionsLine;
+
+    std::getline(in, firstLine);
+    std::getline(in, formatLine);
+    std::getline(in, blankLine);
+    std::getline(in, dimensionsLine);
+
+    REQUIRE(firstLine == "#?RADIANCE");
+    REQUIRE(formatLine == "FORMAT=32-bit_rle_rgbe");
+    REQUIRE(dimensionsLine == "-Y 1 +X 2");
+}
+
 TEST_CASE("Stats writer emits benchmark CSV", "[RayTracer][ImageIO]")
 {
     RenderStats stats;
@@ -591,7 +753,8 @@ TEST_CASE("Bundled scenes parse and build acceleration", "[RayTracer][Scenes]")
         "mesh_showcase.kairo",
         "pbr_showcase.kairo",
         "path_showcase.kairo",
-        "area_light_soft_shadow.kairo"
+        "area_light_soft_shadow.kairo",
+        "textured_environment_showcase.kairo"
     };
 
     for (const char* sceneName : sceneNames)

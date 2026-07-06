@@ -56,6 +56,7 @@ export namespace kairo::foundation::raytracer
         std::uint32_t MaxDepth = 4;
         std::uint32_t TileSize = 16;
         std::uint32_t ThreadCount = 0;
+        std::uint32_t SampleSeed = 0;
         float DepthNear = 0.1f;
         float DepthFar = 25.0f;
         float RayBiasAbsolute = 1.0e-4f;

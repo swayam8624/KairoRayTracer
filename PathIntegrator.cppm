@@ -15,6 +15,7 @@ import Kairo.Foundation.RayTracer.Types;
 import Kairo.Foundation.RayTracer.Material;
 import Kairo.Foundation.RayTracer.Light;
 import Kairo.Foundation.RayTracer.Scene;
+import Kairo.Foundation.RayTracer.Shading;
 
 export namespace kairo::foundation::raytracer
 {
@@ -72,10 +73,24 @@ export namespace kairo::foundation::raytracer
     }
 
     [[nodiscard]]
+    inline float PowerHeuristic(
+        float pdfA,
+        float pdfB) noexcept
+    {
+        const float a2 =
+            pdfA * pdfA;
+
+        const float b2 =
+            pdfB * pdfB;
+
+        return a2 / std::max(a2 + b2, 1.0e-8f);
+    }
+
+    [[nodiscard]]
     inline Color3f DirectLambert(
         const Scene& scene,
         const SurfaceHit& hit,
-        const Material& material,
+        const Color3f& albedo,
         RenderStats* stats)
     {
         Color3f color = Color3f::Black();
@@ -124,7 +139,7 @@ export namespace kairo::foundation::raytracer
                 std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
 
             color +=
-                material.Albedo *
+                albedo *
                 light.Color *
                 (nDotL * attenuation);
         }
@@ -186,10 +201,29 @@ export namespace kairo::foundation::raytracer
                     light.Intensity /
                     std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
 
+                const Vec3f lightNormal =
+                    SafeNormalize(Cross(light.U, light.V), -lightDirection);
+
+                const float lightFacing =
+                    std::max(Dot(lightNormal, -lightDirection), 0.0f);
+
+                const float lightArea =
+                    std::max(Cross(light.U, light.V).Length(), 1.0e-5f);
+
+                const float lightPdf =
+                    lightDistance * lightDistance /
+                    std::max(lightArea * lightFacing, 1.0e-5f);
+
+                const float bsdfPdf =
+                    nDotL / std::numbers::pi_v<float>;
+
+                const float misWeight =
+                    PowerHeuristic(lightPdf, bsdfPdf);
+
                 color +=
-                    material.Albedo *
+                    albedo *
                     light.Color *
-                    (nDotL * attenuation / static_cast<float>(samples));
+                    (nDotL * attenuation * misWeight / static_cast<float>(samples));
             }
         }
 
@@ -219,7 +253,7 @@ export namespace kairo::foundation::raytracer
                 ++stats->MissCount;
             }
 
-            return scene.Settings.Background;
+            return scene.SampleEnvironment(ray.Direction);
         }
 
         if (stats)
@@ -234,13 +268,16 @@ export namespace kairo::foundation::raytracer
         const Material& material =
             scene.Materials.at(hit->MaterialIndex);
 
+        const Color3f albedo =
+            EvaluateAlbedo(scene, *hit);
+
         if (material.Type == MaterialType::Emissive)
         {
             return material.Emission;
         }
 
         const Color3f direct =
-            DirectLambert(scene, *hit, material, stats);
+            DirectLambert(scene, *hit, albedo, stats);
 
         if (depth == scene.Settings.MaxDepth)
         {
@@ -248,7 +285,7 @@ export namespace kairo::foundation::raytracer
         }
 
         float survivalProbability =
-            std::max({ material.Albedo.r, material.Albedo.g, material.Albedo.b, 0.15f });
+            std::max({ albedo.r, albedo.g, albedo.b, 0.15f });
 
         survivalProbability =
             std::min(survivalProbability, 0.95f);
@@ -267,7 +304,7 @@ export namespace kairo::foundation::raytracer
                 bounceDirection);
 
         const Color3f indirect =
-            material.Albedo *
+            albedo *
             (TracePath(scene, bounceRay, depth + 1, rng, stats) / survivalProbability);
 
         return direct + indirect;

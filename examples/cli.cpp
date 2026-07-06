@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 import Kairo.Foundation.RayTracer;
 
@@ -21,7 +22,7 @@ namespace
     void PrintUsage()
     {
         std::cout
-            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--accel brute|sah|morton] [--output path] [--stats path.csv] [--width px --height px] [--samples n] [--threads n]\n";
+            << "Usage: KairoRayTracerCLI <scene.kairo> [--mode whitted|pbr|path|normal|depth|shadow_mask|bvh_heatmap|albedo|primitive_id|uv|barycentric|accel_diff] [--accel brute|sah|morton] [--output path] [--stats path.csv] [--width px --height px] [--samples n] [--passes n] [--threads n]\n";
     }
 
     std::uint32_t ParseU32(
@@ -77,6 +78,7 @@ int main(
 
         std::filesystem::path statsPath;
         bool rebuildAcceleration = false;
+        std::uint32_t progressivePasses = 1;
 
         for (int i = 2; i < argc; ++i)
         {
@@ -128,6 +130,11 @@ int main(
                 scene.Settings.SamplesPerPixel =
                     ParseU32(argv[++i], "samples");
             }
+            else if (arg == "--passes" && i + 1 < argc)
+            {
+                progressivePasses =
+                    ParseU32(argv[++i], "passes");
+            }
             else if (arg == "--threads" && i + 1 < argc)
             {
                 scene.Settings.ThreadCount =
@@ -149,21 +156,39 @@ int main(
                   << scene.Settings.Width << "x" << scene.Settings.Height
                   << " mode=" << ToString(scene.Settings.Mode)
                   << " accel=" << ToString(scene.Settings.Acceleration)
+                  << " passes=" << progressivePasses
                   << " scene=" << scenePath << "...\n";
 
-        const RenderResult result =
-            Renderer{}.Render(scene);
+        ProgressiveRenderResult progressiveResult;
+        if (progressivePasses > 1)
+        {
+            progressiveResult =
+                RenderProgressive(scene, progressivePasses);
+        }
+        else
+        {
+            RenderResult singlePass =
+                Renderer{}.Render(scene);
+
+            progressiveResult =
+                ProgressiveRenderResult
+                {
+                    std::move(singlePass.Image),
+                    singlePass.Stats,
+                    1
+                };
+        }
 
         // The renderer returns a CPU Film. ImageIO owns the file encoding step,
         // which is why adding PNG later will not change the render loop.
-        SaveImage(result.Image, outputPath);
+        SaveImage(progressiveResult.Image, outputPath);
 
         if (!statsPath.empty())
         {
-            SaveStatsCSV(result.Stats, statsPath);
+            SaveStatsCSV(progressiveResult.Stats, statsPath);
         }
 
-        std::cout << "Done in " << result.Stats.RenderMilliseconds << " ms\n"
+        std::cout << "Done in " << progressiveResult.Stats.RenderMilliseconds << " ms\n"
                   << "Saved " << outputPath << "\n";
 
         if (!statsPath.empty())
@@ -171,17 +196,18 @@ int main(
             std::cout << "Saved stats CSV = " << statsPath << "\n";
         }
 
-        std::cout << "primary rays = " << result.Stats.PrimaryRays << "\n"
-                  << "shadow rays = " << result.Stats.ShadowRays << "\n"
-                  << "reflection rays = " << result.Stats.ReflectionRays << "\n"
-                  << "hits = " << result.Stats.HitCount << "\n"
-                  << "misses = " << result.Stats.MissCount << "\n"
-                  << "max recursion depth = " << result.Stats.MaxRecursionDepthReached << "\n"
-                  << "bvh nodes visited = " << result.Stats.BVHVisitedNodes << "\n"
-                  << "bvh primitives tested = " << result.Stats.BVHTestedPrimitives << "\n"
-                  << "rays/sec = " << result.Stats.RaysPerSecond << "\n"
-                  << "primitive tests/ray = " << result.Stats.PrimitiveTestsPerRay << "\n"
-                  << "nodes visited/ray = " << result.Stats.NodesVisitedPerRay << "\n";
+        std::cout << "completed passes = " << progressiveResult.CompletedPasses << "\n"
+                  << "primary rays = " << progressiveResult.Stats.PrimaryRays << "\n"
+                  << "shadow rays = " << progressiveResult.Stats.ShadowRays << "\n"
+                  << "reflection rays = " << progressiveResult.Stats.ReflectionRays << "\n"
+                  << "hits = " << progressiveResult.Stats.HitCount << "\n"
+                  << "misses = " << progressiveResult.Stats.MissCount << "\n"
+                  << "max recursion depth = " << progressiveResult.Stats.MaxRecursionDepthReached << "\n"
+                  << "bvh nodes visited = " << progressiveResult.Stats.BVHVisitedNodes << "\n"
+                  << "bvh primitives tested = " << progressiveResult.Stats.BVHTestedPrimitives << "\n"
+                  << "rays/sec = " << progressiveResult.Stats.RaysPerSecond << "\n"
+                  << "primitive tests/ray = " << progressiveResult.Stats.PrimitiveTestsPerRay << "\n"
+                  << "nodes visited/ray = " << progressiveResult.Stats.NodesVisitedPerRay << "\n";
 
         return 0;
     }

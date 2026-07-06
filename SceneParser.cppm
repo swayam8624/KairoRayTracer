@@ -21,6 +21,8 @@ import Kairo.Foundation.RayTracer.Camera;
 import Kairo.Foundation.RayTracer.Material;
 import Kairo.Foundation.RayTracer.Light;
 import Kairo.Foundation.RayTracer.Scene;
+import Kairo.Foundation.RayTracer.Texture;
+import Kairo.Foundation.RayTracer.Environment;
 import Kairo.Foundation.RayTracer.Mesh;
 import Kairo.Foundation.RayTracer.OBJLoader;
 
@@ -249,6 +251,17 @@ export namespace kairo::foundation::raytracer
 
             Fail(line, token.Column, "unknown material type `" + token.Text + "`.");
         }
+
+        [[nodiscard]]
+        inline TextureFilter ParseTextureFilter(
+            const Token& token,
+            std::uint32_t line)
+        {
+            if (token.Text == "nearest") return TextureFilter::Nearest;
+            if (token.Text == "bilinear" || token.Text == "linear") return TextureFilter::Bilinear;
+
+            Fail(line, token.Column, "unknown texture filter `" + token.Text + "`.");
+        }
     }
 
     [[nodiscard]]
@@ -261,6 +274,7 @@ export namespace kairo::foundation::raytracer
         // before using it.
         Scene scene;
         std::unordered_map<std::string, std::uint32_t> materialIndices;
+        std::unordered_map<std::string, std::uint32_t> textureIndices;
 
         bool cameraFound = false;
         Vec3f cameraPosition = Vec3f{ 0.0f, 1.0f, 6.0f };
@@ -309,6 +323,40 @@ export namespace kairo::foundation::raytracer
             {
                 parser_detail::RequireCount(tokens, line, 4, "background r g b");
                 scene.Settings.Background = parser_detail::ParseColor(tokens, line, 1);
+            }
+            else if (command == "environment")
+            {
+                if (tokens.size() < 2)
+                {
+                    parser_detail::Fail(line, tokens[0].Column, "usage: environment constant r g b intensity or environment texture name intensity");
+                }
+
+                if (tokens[1].Text == "constant")
+                {
+                    parser_detail::RequireCount(tokens, line, 6, "environment constant r g b intensity");
+                    scene.Environment.Enabled = true;
+                    scene.Environment.Color = parser_detail::ParseColor(tokens, line, 2);
+                    scene.Environment.Intensity = parser_detail::ParseFloat(tokens[5], line);
+                }
+                else if (tokens[1].Text == "texture")
+                {
+                    parser_detail::RequireCount(tokens, line, 4, "environment texture textureName intensity");
+                    const auto textureIt =
+                        textureIndices.find(tokens[2].Text);
+
+                    if (textureIt == textureIndices.end())
+                    {
+                        parser_detail::Fail(line, tokens[2].Column, "unknown texture `" + tokens[2].Text + "`.");
+                    }
+
+                    scene.Environment.Enabled = true;
+                    scene.Environment.TextureIndex = textureIt->second;
+                    scene.Environment.Intensity = parser_detail::ParseFloat(tokens[3], line);
+                }
+                else
+                {
+                    parser_detail::Fail(line, tokens[1].Column, "unknown environment type `" + tokens[1].Text + "`.");
+                }
             }
             else if (command == "integrator")
             {
@@ -368,6 +416,61 @@ export namespace kairo::foundation::raytracer
 
                 materialIndices[materialName] =
                     scene.AddMaterial(std::move(material));
+            }
+            else if (command == "texture")
+            {
+                if (tokens.size() != 3 && tokens.size() != 4)
+                {
+                    parser_detail::Fail(line, tokens[0].Column, "usage: texture name path [nearest|bilinear].");
+                }
+
+                if (textureIndices.contains(tokens[1].Text))
+                {
+                    parser_detail::Fail(line, tokens[1].Column, "duplicate texture `" + tokens[1].Text + "`.");
+                }
+
+                std::filesystem::path texturePath =
+                    tokens[2].Text;
+
+                if (texturePath.is_relative())
+                {
+                    texturePath = baseDirectory / texturePath;
+                }
+
+                const TextureFilter filter =
+                    tokens.size() == 4
+                        ? parser_detail::ParseTextureFilter(tokens[3], line)
+                        : TextureFilter::Bilinear;
+
+                textureIndices[tokens[1].Text] =
+                    scene.AddTexture(
+                        LoadPPMTexture(
+                            texturePath,
+                            tokens[1].Text,
+                            filter));
+            }
+            else if (command == "material_texture")
+            {
+                parser_detail::RequireCount(tokens, line, 3, "material_texture materialName textureName");
+
+                const auto materialIt =
+                    materialIndices.find(tokens[1].Text);
+
+                if (materialIt == materialIndices.end())
+                {
+                    parser_detail::Fail(line, tokens[1].Column, "unknown material `" + tokens[1].Text + "`.");
+                }
+
+                const auto textureIt =
+                    textureIndices.find(tokens[2].Text);
+
+                if (textureIt == textureIndices.end())
+                {
+                    parser_detail::Fail(line, tokens[2].Column, "unknown texture `" + tokens[2].Text + "`.");
+                }
+
+                scene.Materials.at(materialIt->second).AlbedoTextureIndex =
+                    textureIt->second;
             }
             else if (command == "light")
             {
@@ -464,12 +567,10 @@ export namespace kairo::foundation::raytracer
                         parser_detail::ParseFloat(tokens[3], line),
                         parser_detail::ParseVec3(tokens, line, 4));
 
-                for (const Trianglef& triangle : mesh.Triangles)
+                for (const MeshTriangle& triangle : mesh.Triangles)
                 {
                     scene.AddTriangle(
-                        triangle.A,
-                        triangle.B,
-                        triangle.C,
+                        triangle,
                         materialIt->second);
                 }
             }
