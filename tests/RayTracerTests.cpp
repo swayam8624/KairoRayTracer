@@ -464,6 +464,12 @@ TEST_CASE("OBJ loader preserves UVs and smooth normals", "[RayTracer][OBJ]")
     REQUIRE(mesh.Triangles[0].HasUVs);
     REQUIRE(mesh.Triangles[0].HasVertexNormals);
 
+    const TriangleMesh mirrored = LoadOBJMesh(objPath, -1.0f);
+    REQUIRE(mirrored.Triangles.size() == 1u);
+    CHECK(mirrored.Triangles[0].NormalA.z == Catch::Approx(-1.0f));
+    CHECK(mirrored.Triangles[0].Triangle.B.x == Catch::Approx(-1.0f));
+    REQUIRE_THROWS_AS(LoadOBJMesh(objPath, 0.0f), std::invalid_argument);
+
     TrianglePrimitive primitive
     {
         mesh.Triangles[0].Triangle,

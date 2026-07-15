@@ -15,11 +15,28 @@ option(KAIRO_RAYTRACER_BUILD_PREVIEW "Build GLFW preview executable" ON)
 # Standalone source fallback aligned with the spatial revision exercised by the
 # workspace superbuild. Local sibling and explicit source paths remain first.
 set(KAIRO_RAYTRACER_SPATIAL_REVISION bf238e02cc0b78e07c37a51c5343b726c4b29347)
+set(KAIRO_RAYTRACER_ASSETS_REVISION 306a715094ff21707cba209e38eecb282bbb9f1c)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 elseif(MSVC)
     add_compile_options(/W4)
+endif()
+
+if(NOT TARGET KairoAssets)
+    set(KAIRO_ASSETS_SOURCE_DIR "" CACHE PATH "Path to a local KairoAssets checkout")
+    if(KAIRO_ASSETS_SOURCE_DIR AND EXISTS "${KAIRO_ASSETS_SOURCE_DIR}/CMakeLists.txt")
+        add_subdirectory("${KAIRO_ASSETS_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/_deps/KairoAssets")
+    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../KairoAssets/CMakeLists.txt")
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../KairoAssets" "${CMAKE_CURRENT_BINARY_DIR}/_deps/KairoAssets")
+    else()
+        include(FetchContent)
+        FetchContent_Declare(KairoAssets
+            GIT_REPOSITORY https://github.com/swayam8624/KairoAssets.git
+            GIT_TAG ${KAIRO_RAYTRACER_ASSETS_REVISION}
+            GIT_SHALLOW TRUE)
+        FetchContent_MakeAvailable(KairoAssets)
+    endif()
 endif()
 
 if(NOT TARGET KairoSpatial)
@@ -87,7 +104,7 @@ target_sources(KairoRayTracer
             KairoRayTracer.cppm
 )
 
-target_link_libraries(KairoRayTracer PUBLIC KairoSpatial)
+target_link_libraries(KairoRayTracer PUBLIC KairoSpatial KairoAssets)
 
 add_executable(KairoRayTracerCLI examples/cli.cpp)
 target_link_libraries(KairoRayTracerCLI PRIVATE KairoRayTracer)

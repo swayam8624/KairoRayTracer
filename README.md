@@ -6,6 +6,7 @@ together:
 
 ```text
 KairoMath -> KairoGeometry -> KairoSpatial -> rendered image
+KairoAssets -> portable mesh artifacts ------^
 ```
 
 The repo has moved past V1 stabilization into renderer-strengthening work:
@@ -95,6 +96,12 @@ cmake --build build-headless
 Core renderer modules do not depend on GLFW or OpenGL. `PreviewWindow.cppm` is
 compiled only for `KairoRayTracerPreview` when
 `KAIRO_RAYTRACER_BUILD_PREVIEW=ON`.
+
+Wavefront source parsing is owned by KairoAssets. `OBJLoader.cppm` reads the
+source, requests a validated `MeshArtifactData`, and only adapts that portable
+indexed geometry into ray-tracer triangles. The former duplicate parser has
+been removed, so offline and real-time consumers now share index validation,
+polygon triangulation, smoothing, generated normals, and source diagnostics.
 
 ## Implemented Capabilities
 
