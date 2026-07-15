@@ -94,12 +94,10 @@ target_link_libraries(KairoRayTracerCLI PRIVATE KairoRayTracer)
 
 if(KAIRO_RAYTRACER_BUILD_PREVIEW)
     find_package(OpenGL REQUIRED)
-    find_path(GLFW_INCLUDE_DIR GLFW/glfw3.h PATHS /opt/homebrew/include /usr/local/include)
-    find_library(GLFW_LIBRARY glfw PATHS /opt/homebrew/lib /usr/local/lib)
-
-    if(NOT GLFW_INCLUDE_DIR OR NOT GLFW_LIBRARY)
-        message(FATAL_ERROR "GLFW was not found. Install it with: brew install glfw")
-    endif()
+    # glfw3's exported target carries both include directories and platform
+    # link requirements. It works with Homebrew and vcpkg, unlike a
+    # hard-coded macOS path search.
+    find_package(glfw3 CONFIG REQUIRED)
 
     add_executable(KairoRayTracerPreview examples/preview.cpp)
     target_sources(KairoRayTracerPreview
@@ -109,16 +107,20 @@ if(KAIRO_RAYTRACER_BUILD_PREVIEW)
             FILES
                 PreviewWindow.cppm
     )
-    target_include_directories(KairoRayTracerPreview PRIVATE ${GLFW_INCLUDE_DIR})
-    target_link_libraries(KairoRayTracerPreview PRIVATE KairoRayTracer ${GLFW_LIBRARY} OpenGL::GL)
+    target_link_libraries(KairoRayTracerPreview PRIVATE KairoRayTracer glfw OpenGL::GL)
 endif()
 
 if(KAIRO_RAYTRACER_BUILD_TESTS)
+    find_package(Git REQUIRED)
     include(FetchContent)
     FetchContent_Declare(
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_TAG v3.5.4
+        # Catch2 has no required submodules. Avoid an unnecessary recursive
+        # checkout in FetchContent's isolated population project.
+        GIT_SUBMODULES ""
+        GIT_SHALLOW TRUE
     )
     FetchContent_MakeAvailable(Catch2)
 
