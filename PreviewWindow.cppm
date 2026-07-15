@@ -3,7 +3,11 @@ module;
 #define GL_SILENCE_DEPRECATION
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#if defined(__APPLE__)
 #include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif
 
 #include <chrono>
 #include <cstdint>
