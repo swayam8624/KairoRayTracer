@@ -14,7 +14,7 @@ option(KAIRO_RAYTRACER_BUILD_PREVIEW "Build GLFW preview executable" ON)
 
 # Standalone source fallback aligned with the spatial revision exercised by the
 # workspace superbuild. Local sibling and explicit source paths remain first.
-set(KAIRO_RAYTRACER_SPATIAL_REVISION af1525ce94f3027da7bcf573135128e3ae02f88a)
+set(KAIRO_RAYTRACER_SPATIAL_REVISION bf238e02cc0b78e07c37a51c5343b726c4b29347)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -Wno-unused-parameter)
