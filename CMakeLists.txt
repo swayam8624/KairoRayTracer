@@ -12,6 +12,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(KAIRO_RAYTRACER_BUILD_TESTS "Build KairoRayTracer tests" ${PROJECT_IS_TOP_LEVEL})
 option(KAIRO_RAYTRACER_BUILD_PREVIEW "Build GLFW preview executable" ON)
 
+# Standalone source fallback aligned with the spatial revision exercised by the
+# workspace superbuild. Local sibling and explicit source paths remain first.
+set(KAIRO_RAYTRACER_SPATIAL_REVISION 51e23cfbcb0bd95aeac969d9a2e37deb360416e8)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -Wno-unused-parameter)
 elseif(MSVC)
@@ -40,7 +44,8 @@ if(NOT TARGET KairoSpatial)
         FetchContent_Declare(
             KairoSpatial
             GIT_REPOSITORY https://github.com/swayam8624/KairoSpatial.git
-            GIT_TAG main
+            GIT_TAG ${KAIRO_RAYTRACER_SPATIAL_REVISION}
+            GIT_SHALLOW TRUE
         )
         FetchContent_MakeAvailable(KairoSpatial)
     endif()
