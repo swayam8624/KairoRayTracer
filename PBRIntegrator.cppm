@@ -1,5 +1,6 @@
 module;
 
+#include <cstdint>
 #include <algorithm>
 #include <cmath>
 #include <numbers>
