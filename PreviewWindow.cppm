@@ -6,6 +6,18 @@ module;
 #if defined(__APPLE__)
 #include <OpenGL/gl.h>
 #else
+#if defined(_WIN32)
+// The Windows OpenGL header uses WINGDIAPI and other declarations supplied by
+// the Win32 SDK. GLFW_INCLUDE_NONE deliberately prevents GLFW from including
+// windows.h, so the preview owns that platform-header dependency explicitly.
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 #include <GL/gl.h>
 #endif
 
