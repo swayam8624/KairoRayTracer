@@ -21,6 +21,14 @@ module;
 #include <GL/gl.h>
 #endif
 
+// Windows' system OpenGL 1.1 header omits this core sampler token even though
+// the value is stable and GLFW creates a context where the operation is valid.
+// Newer platform headers may define it already, so keep this compatibility
+// definition guarded.
+#ifndef GL_CLAMP_TO_EDGE
+#define GL_CLAMP_TO_EDGE 0x812F
+#endif
+
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
