@@ -21,42 +21,49 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path('SceneParser.cppm')
           s = p.read_text()
           if '#include <locale>\n' not in s:
               s = s.replace('#include <fstream>\n', '#include <fstream>\n#include <locale>\n')
-          old = '''            // std::from_chars avoids locale surprises and lets us verify that
-            // the whole token was consumed. "1abc" should not parse as 1.
-            float value = 0.0f;
-            const char* begin = token.Text.data();
-            const char* end = begin + token.Text.size();
-            const auto [ptr, ec] = std::from_chars(begin, end, value);
-            if (ec != std::errc{} || ptr != end)
-            {
-                Fail(line, token.Column, "invalid float `" + token.Text + "`.");
-            }
 
-            return value;
-          '''
-          new = '''            // Floating-point std::from_chars in Homebrew libc++ is gated by
-            // the macOS deployment target. A classic-locale stream preserves
-            // deterministic decimal parsing while remaining available on the
-            // supported macOS versions. Requiring EOF rejects partial tokens
-            // such as "1abc" just like the previous from_chars path.
-            std::istringstream stream(token.Text);
-            stream.imbue(std::locale::classic());
-            float value = 0.0f;
-            stream >> value;
-            if (!stream || stream.peek() != std::char_traits<char>::eof())
-            {
-                Fail(line, token.Column, "invalid float `" + token.Text + "`.");
-            }
+          pattern = re.compile(
+              r'        \[\[nodiscard\]\]\n'
+              r'        inline float ParseFloat\(.*?'
+              r'\n        \}\n\n'
+              r'        \[\[nodiscard\]\]\n'
+              r'        inline std::uint32_t ParseUInt',
+              re.S)
 
-            return value;
-          '''
-          if old not in s:
-              raise SystemExit('expected ParseFloat block not found')
-          p.write_text(s.replace(old, new))
+          replacement = '''        [[nodiscard]]
+          inline float ParseFloat(
+              const Token& token,
+              std::uint32_t line)
+          {
+              // Floating-point std::from_chars in Homebrew libc++ is gated by
+              // the macOS deployment target. A classic-locale stream preserves
+              // deterministic decimal parsing while remaining available on the
+              // supported macOS versions. Requiring EOF rejects partial tokens.
+              std::istringstream stream(token.Text);
+              stream.imbue(std::locale::classic());
+              float value = 0.0f;
+              stream >> value;
+              if (!stream || stream.peek() != std::char_traits<char>::eof())
+              {
+                  Fail(line, token.Column, "invalid float `" + token.Text + "`.");
+              }
+
+              return value;
+          }
+
+          [[nodiscard]]
+          inline std::uint32_t ParseUInt'''
+
+          s, count = pattern.subn(replacement, s, count=1)
+          if count != 1:
+              raise SystemExit(f'expected exactly one ParseFloat function, replaced {count}')
+          p.write_text(s)
           PY
           rm .github/workflows/patch-scene-parser-portability.yml
       - name: Commit fix and self-clean
