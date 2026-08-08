@@ -5,6 +5,7 @@ module;
 #include <atomic>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <thread>
 #include <vector>
 
@@ -26,14 +27,6 @@ export namespace kairo::foundation::raytracer
 {
     using namespace kairo::foundation::geometry;
 
-    //=========================================================
-    // Renderer
-    //
-    // The renderer is intentionally boring: loop pixels, generate primary rays,
-    // ask the active integrator for color, and write the film. This makes it
-    // easy to separate bugs in camera math, intersection, shading, or output.
-    //=========================================================
-
     struct RenderResult final
     {
         Film Image;
@@ -52,24 +45,15 @@ export namespace kairo::foundation::raytracer
             Film film(scene.Settings.Width, scene.Settings.Height);
             RenderStats stats;
 
-            const auto start =
-                std::chrono::steady_clock::now();
-
-            const std::uint32_t tileSize =
-                scene.Settings.TileSize;
-
+            const auto start = std::chrono::steady_clock::now();
+            const std::uint32_t tileSize = scene.Settings.TileSize;
             const std::uint32_t tilesX =
                 (scene.Settings.Width + tileSize - 1u) / tileSize;
-
             const std::uint32_t tilesY =
                 (scene.Settings.Height + tileSize - 1u) / tileSize;
-
-            const std::uint32_t tileCount =
-                tilesX * tilesY;
-
+            const std::uint32_t tileCount = tilesX * tilesY;
             const std::uint32_t hardwareThreads =
                 std::max(1u, std::thread::hardware_concurrency());
-
             const std::uint32_t workerCount =
                 std::max(
                     1u,
@@ -100,23 +84,14 @@ export namespace kairo::foundation::raytracer
                         const float u =
                             (static_cast<float>(x) + pixelSample.dx) /
                             static_cast<float>(scene.Settings.Width);
-
                         const float v =
                             (static_cast<float>(y) + pixelSample.dy) /
                             static_cast<float>(scene.Settings.Height);
 
-                        const Rayf ray =
-                            scene.MainCamera.GenerateRay(u, v);
+                        const Rayf ray = scene.MainCamera.GenerateRay(u, v);
 
                         ++localStats.PrimaryRays;
-                        accumulated +=
-                            Trace(
-                                scene,
-                                ray,
-                                x,
-                                y,
-                                sample,
-                                &localStats);
+                        accumulated += Trace(scene, ray, x, y, sample, &localStats);
                     }
 
                     film.SetPixel(
@@ -128,8 +103,7 @@ export namespace kairo::foundation::raytracer
             auto renderTiles =
                 [&](std::uint32_t workerIndex)
                 {
-                    RenderStats& localStats =
-                        workerStats[workerIndex];
+                    RenderStats& localStats = workerStats[workerIndex];
 
                     while (true)
                     {
@@ -137,65 +111,62 @@ export namespace kairo::foundation::raytracer
                             nextTile.fetch_add(1u, std::memory_order_relaxed);
 
                         if (tileIndex >= tileCount)
-                        {
                             break;
-                        }
 
-                        const std::uint32_t tileX =
-                            tileIndex % tilesX;
-
-                        const std::uint32_t tileY =
-                            tileIndex / tilesX;
-
-                        const std::uint32_t beginX =
-                            tileX * tileSize;
-
-                        const std::uint32_t beginY =
-                            tileY * tileSize;
-
+                        const std::uint32_t tileX = tileIndex % tilesX;
+                        const std::uint32_t tileY = tileIndex / tilesX;
+                        const std::uint32_t beginX = tileX * tileSize;
+                        const std::uint32_t beginY = tileY * tileSize;
                         const std::uint32_t endX =
                             std::min(beginX + tileSize, scene.Settings.Width);
-
                         const std::uint32_t endY =
                             std::min(beginY + tileSize, scene.Settings.Height);
 
                         for (std::uint32_t y = beginY; y < endY; ++y)
                         {
                             for (std::uint32_t x = beginX; x < endX; ++x)
-                            {
                                 renderPixel(x, y, localStats);
-                            }
                         }
                     }
                 };
 
             for (std::uint32_t workerIndex = 0; workerIndex < workerCount; ++workerIndex)
-            {
                 workers.emplace_back(renderTiles, workerIndex);
-            }
 
             for (std::thread& worker : workers)
-            {
                 worker.join();
-            }
 
             for (const RenderStats& localStats : workerStats)
-            {
                 Accumulate(stats, localStats);
-            }
 
-            const auto end =
-                std::chrono::steady_clock::now();
-
+            const auto end = std::chrono::steady_clock::now();
             stats.RenderMilliseconds =
                 std::chrono::duration<double, std::milli>(end - start).count();
-
             FinalizeDerivedStats(stats);
 
             return { std::move(film), stats };
         }
 
     private:
+        [[nodiscard]]
+        static Color3f ApplyPrimaryFog(
+            const Scene& scene,
+            const Rayf& ray,
+            const Color3f& color)
+        {
+            if (scene.Settings.Fog == FogMode::Disabled)
+                return color;
+
+            // Deliberately do not accumulate stats for this visibility query:
+            // fog is a post-integrator primary-ray composition step, not an
+            // additional authored ray. This keeps existing profiling semantics
+            // stable while all beauty integrators share identical fog behavior.
+            const auto hit = scene.Intersect(ray, nullptr);
+            const float distance =
+                hit ? hit->Distance : std::numeric_limits<float>::infinity();
+            return ApplyFog(scene.Settings, color, distance);
+        }
+
         [[nodiscard]]
         static Color3f Trace(
             const Scene& scene,
@@ -212,9 +183,11 @@ export namespace kairo::foundation::raytracer
             case RenderMode::Depth:
                 return TraceDepth(scene, ray, stats);
             case RenderMode::Whitted:
-                return TraceWhitted(scene, ray, 0, stats);
+                return ApplyPrimaryFog(
+                    scene, ray, TraceWhitted(scene, ray, 0, stats));
             case RenderMode::PBR:
-                return TracePBRDirect(scene, ray, stats);
+                return ApplyPrimaryFog(
+                    scene, ray, TracePBRDirect(scene, ray, stats));
             case RenderMode::Path:
             {
                 std::uint32_t rng =
@@ -224,7 +197,8 @@ export namespace kairo::foundation::raytracer
                     scene.Settings.SampleSeed * 2654435761u ^
                     0x9e3779b9u;
 
-                return TracePath(scene, ray, 0, rng, stats);
+                return ApplyPrimaryFog(
+                    scene, ray, TracePath(scene, ray, 0, rng, stats));
             }
             case RenderMode::ShadowMask:
                 return TraceShadowMask(scene, ray, stats);
