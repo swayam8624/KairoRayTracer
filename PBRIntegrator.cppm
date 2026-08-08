@@ -202,67 +202,162 @@ export namespace kairo::foundation::raytracer
 
         for (const DirectionalLight& light : scene.DirectionalLights)
         {
-            const Vec3f lightDirection = SafeNormalize(-light.Direction, Vec3f::Up());
-            const float nDotL = std::max(Dot(hit.Normal, lightDirection), 0.0f);
-            if (nDotL <= 0.0f) continue;
-            const Rayf shadowRay = Rayf::FromOriginDirection(
-                hit.Position + hit.Normal * RayBiasForHit(scene.Settings, hit.Distance),
-                lightDirection);
-            if (stats) ++stats->ShadowRays;
-            if (scene.Occluded(shadowRay, std::numeric_limits<float>::max(), stats)) continue;
+            const Vec3f lightDirection =
+                SafeNormalize(-light.Direction, Vec3f::Up());
 
-            const Vec3f halfVector = SafeNormalize(viewDirection + lightDirection, hit.Normal);
-            const float nDotV = std::max(Dot(hit.Normal, viewDirection), 0.0f);
-            const float nDotH = std::max(Dot(hit.Normal, halfVector), 0.0f);
-            const float vDotH = std::max(Dot(viewDirection, halfVector), 0.0f);
-            const float roughness = std::clamp(material.Roughness, 0.045f, 1.0f);
-            const float metallic = std::clamp(material.Metallic, 0.0f, 1.0f);
-            const Color3f dielectricF0{ 0.04f, 0.04f, 0.04f };
-            const Color3f f0 = dielectricF0 * (1.0f - metallic) + albedo * metallic;
-            const Color3f fresnel = FresnelSchlick(vDotH, f0);
-            const float distribution = DistributionGGX(nDotH, roughness);
-            const float geometry = GeometrySmith(nDotV, nDotL, roughness);
-            const Color3f specular = fresnel *
-                (distribution * geometry / std::max(4.0f * nDotV * nDotL, 1.0e-5f));
-            const Color3f diffuse = albedo * ((1.0f - metallic) / std::numbers::pi_v<float>);
-            color += (diffuse + specular) * light.Color * (nDotL * light.Illuminance);
+            const float nDotL =
+                std::max(Dot(hit->Normal, lightDirection), 0.0f);
+
+            const float nDotV =
+                std::max(Dot(hit->Normal, viewDirection), 0.0f);
+
+            if (nDotL <= 0.0f || nDotV <= 0.0f)
+            {
+                continue;
+            }
+
+            const Rayf shadowRay =
+                Rayf::FromOriginDirection(
+                    hit->Position + hit->Normal * RayBiasForHit(scene.Settings, hit->Distance),
+                    lightDirection);
+
+            if (stats)
+            {
+                ++stats->ShadowRays;
+            }
+
+            if (scene.Occluded(shadowRay, std::numeric_limits<float>::max(), stats))
+            {
+                continue;
+            }
+
+            const Vec3f halfVector =
+                SafeNormalize(viewDirection + lightDirection, hit->Normal);
+
+            const float nDotH =
+                std::max(Dot(hit->Normal, halfVector), 0.0f);
+
+            const float hDotV =
+                std::max(Dot(halfVector, viewDirection), 0.0f);
+
+            const float distribution =
+                DistributionGGX(nDotH, roughness);
+
+            const float geometry =
+                GeometrySchlickGGX(nDotV, roughness) *
+                GeometrySchlickGGX(nDotL, roughness);
+
+            const Color3f fresnel =
+                FresnelSchlick(hDotV, f0);
+
+            const Color3f specular =
+                fresnel *
+                (distribution * geometry /
+                    std::max(4.0f * nDotV * nDotL, 1.0e-5f));
+
+            const Color3f diffuse =
+                albedo *
+                ((1.0f - metallic) / std::numbers::pi_v<float>);
+
+            color +=
+                (diffuse + specular) *
+                light.Color *
+                (nDotL * light.Illuminance);
         }
 
         for (const SpotLight& light : scene.SpotLights)
         {
-            const Vec3f toLight = light.Position - hit.Position;
-            const float lightDistance = toLight.Length();
-            if (lightDistance <= 1.0e-4f || lightDistance > light.Range) continue;
-            const Vec3f lightDirection = toLight / lightDistance;
-            const float coneCosine = Dot(SafeNormalize(light.Direction, Vec3f{ 0.0f, 0.0f, -1.0f }), -lightDirection);
-            const float coneWidth = std::max(light.InnerConeCosine - light.OuterConeCosine, 1.0e-5f);
-            const float cone = std::clamp((coneCosine - light.OuterConeCosine) / coneWidth, 0.0f, 1.0f);
-            if (cone <= 0.0f) continue;
-            const float nDotL = std::max(Dot(hit.Normal, lightDirection), 0.0f);
-            if (nDotL <= 0.0f) continue;
-            const Rayf shadowRay = Rayf::FromOriginDirection(
-                hit.Position + hit.Normal * RayBiasForHit(scene.Settings, hit.Distance),
-                lightDirection);
-            if (stats) ++stats->ShadowRays;
-            if (scene.Occluded(shadowRay, lightDistance - RayBiasForHit(scene.Settings, hit.Distance), stats)) continue;
+            const Vec3f toLight =
+                light.Position - hit->Position;
 
-            const Vec3f halfVector = SafeNormalize(viewDirection + lightDirection, hit.Normal);
-            const float nDotV = std::max(Dot(hit.Normal, viewDirection), 0.0f);
-            const float nDotH = std::max(Dot(hit.Normal, halfVector), 0.0f);
-            const float vDotH = std::max(Dot(viewDirection, halfVector), 0.0f);
-            const float roughness = std::clamp(material.Roughness, 0.045f, 1.0f);
-            const float metallic = std::clamp(material.Metallic, 0.0f, 1.0f);
-            const Color3f dielectricF0{ 0.04f, 0.04f, 0.04f };
-            const Color3f f0 = dielectricF0 * (1.0f - metallic) + albedo * metallic;
-            const Color3f fresnel = FresnelSchlick(vDotH, f0);
-            const float distribution = DistributionGGX(nDotH, roughness);
-            const float geometry = GeometrySmith(nDotV, nDotL, roughness);
-            const Color3f specular = fresnel *
-                (distribution * geometry / std::max(4.0f * nDotV * nDotL, 1.0e-5f));
-            const Color3f diffuse = albedo * ((1.0f - metallic) / std::numbers::pi_v<float>);
-            const float attenuation = light.Intensity * cone /
+            const float lightDistance =
+                toLight.Length();
+
+            if (lightDistance <= 1.0e-4f || lightDistance > light.Range)
+            {
+                continue;
+            }
+
+            const Vec3f lightDirection =
+                toLight / lightDistance;
+
+            const float coneCosine = Dot(
+                SafeNormalize(light.Direction, Vec3f{ 0.0f, 0.0f, -1.0f }),
+                -lightDirection);
+
+            const float coneWidth =
+                std::max(light.InnerConeCosine - light.OuterConeCosine, 1.0e-5f);
+
+            const float cone =
+                std::clamp((coneCosine - light.OuterConeCosine) / coneWidth, 0.0f, 1.0f);
+
+            if (cone <= 0.0f)
+            {
+                continue;
+            }
+
+            const float nDotL =
+                std::max(Dot(hit->Normal, lightDirection), 0.0f);
+
+            const float nDotV =
+                std::max(Dot(hit->Normal, viewDirection), 0.0f);
+
+            if (nDotL <= 0.0f || nDotV <= 0.0f)
+            {
+                continue;
+            }
+
+            const Rayf shadowRay =
+                Rayf::FromOriginDirection(
+                    hit->Position + hit->Normal * RayBiasForHit(scene.Settings, hit->Distance),
+                    lightDirection);
+
+            if (stats)
+            {
+                ++stats->ShadowRays;
+            }
+
+            if (scene.Occluded(shadowRay, lightDistance - RayBiasForHit(scene.Settings, hit->Distance), stats))
+            {
+                continue;
+            }
+
+            const Vec3f halfVector =
+                SafeNormalize(viewDirection + lightDirection, hit->Normal);
+
+            const float nDotH =
+                std::max(Dot(hit->Normal, halfVector), 0.0f);
+
+            const float hDotV =
+                std::max(Dot(halfVector, viewDirection), 0.0f);
+
+            const float distribution =
+                DistributionGGX(nDotH, roughness);
+
+            const float geometry =
+                GeometrySchlickGGX(nDotV, roughness) *
+                GeometrySchlickGGX(nDotL, roughness);
+
+            const Color3f fresnel =
+                FresnelSchlick(hDotV, f0);
+
+            const Color3f specular =
+                fresnel *
+                (distribution * geometry /
+                    std::max(4.0f * nDotV * nDotL, 1.0e-5f));
+
+            const Color3f diffuse =
+                albedo *
+                ((1.0f - metallic) / std::numbers::pi_v<float>);
+
+            const float attenuation =
+                light.Intensity * cone /
                 std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
-            color += (diffuse + specular) * light.Color * (nDotL * attenuation);
+
+            color +=
+                (diffuse + specular) *
+                light.Color *
+                (nDotL * attenuation);
         }
 
         for (const AreaLight& light : scene.AreaLights)
