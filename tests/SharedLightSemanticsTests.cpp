@@ -3,7 +3,6 @@
 import Kairo.Foundation.RayTracer;
 import Kairo.Foundation.Math.Vector;
 import Kairo.Foundation.Geometry.Ray;
-import Kairo.Foundation.Geometry.Sphere;
 
 using namespace kairo::foundation::raytracer;
 using namespace kairo::foundation::math;
@@ -22,7 +21,7 @@ namespace
         material.Albedo = { 0.8f, 0.6f, 0.4f };
         material.Roughness = 0.5f;
         const auto materialIndex = scene.AddMaterial(material);
-        scene.AddSphere(Sphere{ { 0.0f, 0.0f, 0.0f }, 1.0f }, materialIndex);
+        scene.AddSphere({ 0.0f, 0.0f, 0.0f }, 1.0f, materialIndex);
         scene.BuildAcceleration();
         return scene;
     }
