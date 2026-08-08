@@ -5,6 +5,7 @@ module;
 #include <cstdint>
 #include <numbers>
 #include <optional>
+#include <limits>
 
 export module Kairo.Foundation.RayTracer.PathIntegrator;
 
@@ -142,6 +143,39 @@ export namespace kairo::foundation::raytracer
                 albedo *
                 light.Color *
                 (nDotL * attenuation);
+        }
+
+        for (const DirectionalLight& light : scene.DirectionalLights)
+        {
+            const Vec3f lightDirection = SafeNormalize(-light.Direction, Vec3f::Up());
+            const float nDotL = std::max(Dot(hit.Normal, lightDirection), 0.0f);
+            if (nDotL <= 0.0f) continue;
+            const Rayf shadowRay = Rayf::FromOriginDirection(
+                hit.Position + hit.Normal * RayBiasForHit(scene.Settings, hit.Distance), lightDirection);
+            if (stats) ++stats->ShadowRays;
+            if (scene.Occluded(shadowRay, std::numeric_limits<float>::max(), stats)) continue;
+            color += albedo * light.Color * (nDotL * light.Illuminance);
+        }
+
+        for (const SpotLight& light : scene.SpotLights)
+        {
+            const Vec3f toLight = light.Position - hit.Position;
+            const float lightDistance = toLight.Length();
+            if (lightDistance <= 1.0e-4f || lightDistance > light.Range) continue;
+            const Vec3f lightDirection = toLight / lightDistance;
+            const float coneCosine = Dot(SafeNormalize(light.Direction, Vec3f::Forward()), -lightDirection);
+            const float coneWidth = std::max(light.InnerConeCosine - light.OuterConeCosine, 1.0e-5f);
+            const float cone = std::clamp((coneCosine - light.OuterConeCosine) / coneWidth, 0.0f, 1.0f);
+            if (cone <= 0.0f) continue;
+            const float nDotL = std::max(Dot(hit.Normal, lightDirection), 0.0f);
+            if (nDotL <= 0.0f) continue;
+            const Rayf shadowRay = Rayf::FromOriginDirection(
+                hit.Position + hit.Normal * RayBiasForHit(scene.Settings, hit.Distance), lightDirection);
+            if (stats) ++stats->ShadowRays;
+            if (scene.Occluded(shadowRay, lightDistance - RayBiasForHit(scene.Settings, hit.Distance), stats)) continue;
+            const float attenuation = light.Intensity * cone /
+                std::max(lightDistance * lightDistance, scene.Settings.MinimumLightDistanceSquared);
+            color += albedo * light.Color * (nDotL * attenuation);
         }
 
         for (const AreaLight& light : scene.AreaLights)

@@ -46,6 +46,8 @@ export namespace kairo::foundation::raytracer
         RenderSettings Settings;
         std::vector<Material> Materials;
         std::vector<PointLight> Lights;
+        std::vector<DirectionalLight> DirectionalLights;
+        std::vector<SpotLight> SpotLights;
         std::vector<AreaLight> AreaLights;
         std::vector<Primitive> Primitives;
         std::vector<Texture2D> Textures;
