@@ -41,37 +41,21 @@ endif()
 
 if(NOT TARGET KairoSpatial)
     set(KAIRO_SPATIAL_SOURCE_DIR "" CACHE PATH "Path to a local KairoSpatial checkout")
-
-    # Dependency resolution order:
-    # 1. Explicit local override for development.
-    # 2. Sibling workspace checkout used on this machine.
-    # 3. GitHub fallback for standalone clone/build.
     if(KAIRO_SPATIAL_SOURCE_DIR AND EXISTS "${KAIRO_SPATIAL_SOURCE_DIR}/CMakeLists.txt")
-        add_subdirectory(
-            "${KAIRO_SPATIAL_SOURCE_DIR}"
-            "${CMAKE_CURRENT_BINARY_DIR}/_deps/KairoSpatial"
-        )
+        add_subdirectory("${KAIRO_SPATIAL_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/_deps/KairoSpatial")
     elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../Foundation/Spatial/CMakeLists.txt")
-        add_subdirectory(
-            "${CMAKE_CURRENT_SOURCE_DIR}/../Foundation/Spatial"
-            "${CMAKE_CURRENT_BINARY_DIR}/_deps/KairoSpatial"
-        )
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../Foundation/Spatial" "${CMAKE_CURRENT_BINARY_DIR}/_deps/KairoSpatial")
     else()
         include(FetchContent)
-        FetchContent_Declare(
-            KairoSpatial
+        FetchContent_Declare(KairoSpatial
             GIT_REPOSITORY https://github.com/swayam8624/KairoSpatial.git
             GIT_TAG ${KAIRO_RAYTRACER_SPATIAL_REVISION}
-            GIT_SHALLOW TRUE
-        )
+            GIT_SHALLOW TRUE)
         FetchContent_MakeAvailable(KairoSpatial)
     endif()
 endif()
 
 add_library(KairoRayTracer)
-
-# C++23 module file set. Keep this list ordered roughly from leaf concepts to
-# high-level orchestration so module dependency errors are easier to read.
 target_sources(KairoRayTracer
     PUBLIC
         FILE_SET CXX_MODULES
@@ -101,6 +85,7 @@ target_sources(KairoRayTracer
             PathIntegrator.cppm
             Renderer.cppm
             ProgressiveRenderer.cppm
+            OfflineRenderJob.cppm
             KairoRayTracer.cppm
 )
 
@@ -111,19 +96,13 @@ target_link_libraries(KairoRayTracerCLI PRIVATE KairoRayTracer)
 
 if(KAIRO_RAYTRACER_BUILD_PREVIEW)
     find_package(OpenGL REQUIRED)
-    # glfw3's exported target carries both include directories and platform
-    # link requirements. It works with Homebrew and vcpkg, unlike a
-    # hard-coded macOS path search.
     find_package(glfw3 CONFIG REQUIRED)
-
     add_executable(KairoRayTracerPreview examples/preview.cpp)
     target_sources(KairoRayTracerPreview
         PRIVATE
             FILE_SET CXX_MODULES
             BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-            FILES
-                PreviewWindow.cppm
-    )
+            FILES PreviewWindow.cppm)
     target_link_libraries(KairoRayTracerPreview PRIVATE KairoRayTracer glfw OpenGL::GL)
 endif()
 
@@ -134,40 +113,23 @@ if(KAIRO_RAYTRACER_BUILD_TESTS)
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_TAG v3.5.4
-        # Catch2 has no required submodules. Avoid an unnecessary recursive
-        # checkout in FetchContent's isolated population project.
         GIT_SUBMODULES ""
-        GIT_SHALLOW TRUE
-    )
+        GIT_SHALLOW TRUE)
     FetchContent_MakeAvailable(Catch2)
 
-    add_executable(KairoRayTracerTests tests/RayTracerTests.cpp)
+    add_executable(KairoRayTracerTests tests/RayTracerTests.cpp tests/OfflineRenderJobTests.cpp)
     target_link_libraries(KairoRayTracerTests PRIVATE KairoRayTracer Catch2::Catch2WithMain)
 
     enable_testing()
     add_test(NAME KairoRayTracerTests COMMAND KairoRayTracerTests)
 
-    add_test(
-        NAME KairoRayTracerCLIRejectsZeroWidth
-        COMMAND KairoRayTracerCLI
-            ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo
-            --width 0
-    )
+    add_test(NAME KairoRayTracerCLIRejectsZeroWidth COMMAND KairoRayTracerCLI
+        ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo --width 0)
     set_tests_properties(KairoRayTracerCLIRejectsZeroWidth PROPERTIES WILL_FAIL TRUE)
-
-    add_test(
-        NAME KairoRayTracerCLIRejectsNegativeSamples
-        COMMAND KairoRayTracerCLI
-            ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo
-            --samples -1
-    )
+    add_test(NAME KairoRayTracerCLIRejectsNegativeSamples COMMAND KairoRayTracerCLI
+        ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo --samples -1)
     set_tests_properties(KairoRayTracerCLIRejectsNegativeSamples PROPERTIES WILL_FAIL TRUE)
-
-    add_test(
-        NAME KairoRayTracerCLIRejectsNonNumericThreads
-        COMMAND KairoRayTracerCLI
-            ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo
-            --threads nope
-    )
+    add_test(NAME KairoRayTracerCLIRejectsNonNumericThreads COMMAND KairoRayTracerCLI
+        ${CMAKE_CURRENT_SOURCE_DIR}/scenes/cornell.kairo --threads nope)
     set_tests_properties(KairoRayTracerCLIRejectsNonNumericThreads PROPERTIES WILL_FAIL TRUE)
 endif()
