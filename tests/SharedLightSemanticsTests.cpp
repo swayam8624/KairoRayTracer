@@ -3,6 +3,7 @@
 import Kairo.Foundation.RayTracer;
 import Kairo.Foundation.Math.Vector;
 import Kairo.Foundation.Geometry.Ray;
+import Kairo.Foundation.Geometry.Sphere;
 
 using namespace kairo::foundation::raytracer;
 using namespace kairo::foundation::math;
