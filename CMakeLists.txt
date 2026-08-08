@@ -14,10 +14,11 @@ option(KAIRO_RAYTRACER_BUILD_PREVIEW "Build GLFW preview executable" ON)
 
 find_package(Threads REQUIRED)
 
-# Standalone source fallback aligned with the spatial revision exercised by the
-# workspace superbuild. Local sibling and explicit source paths remain first.
+# Standalone source fallbacks. During this stacked Phase 6-12 review the Assets
+# dependency follows its named integration branch; before merge the umbrella
+# pins the exact reviewed component commit.
 set(KAIRO_RAYTRACER_SPATIAL_REVISION bf238e02cc0b78e07c37a51c5343b726c4b29347)
-set(KAIRO_RAYTRACER_ASSETS_REVISION 306a715094ff21707cba209e38eecb282bbb9f1c)
+set(KAIRO_RAYTRACER_ASSETS_REVISION agent/phases8-11-authoring-completion)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -Wno-unused-parameter)
@@ -35,8 +36,7 @@ if(NOT TARGET KairoAssets)
         include(FetchContent)
         FetchContent_Declare(KairoAssets
             GIT_REPOSITORY https://github.com/swayam8624/KairoAssets.git
-            GIT_TAG ${KAIRO_RAYTRACER_ASSETS_REVISION}
-            GIT_SHALLOW TRUE)
+            GIT_TAG ${KAIRO_RAYTRACER_ASSETS_REVISION})
         FetchContent_MakeAvailable(KairoAssets)
     endif()
 endif()
@@ -119,7 +119,10 @@ if(KAIRO_RAYTRACER_BUILD_TESTS)
         GIT_SHALLOW TRUE)
     FetchContent_MakeAvailable(Catch2)
 
-    add_executable(KairoRayTracerTests tests/RayTracerTests.cpp tests/OfflineRenderJobTests.cpp)
+    add_executable(KairoRayTracerTests
+        tests/RayTracerTests.cpp
+        tests/OfflineRenderJobTests.cpp
+        tests/SharedLightSemanticsTests.cpp)
     target_link_libraries(KairoRayTracerTests PRIVATE KairoRayTracer Catch2::Catch2WithMain)
 
     enable_testing()
