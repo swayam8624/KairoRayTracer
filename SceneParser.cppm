@@ -4,6 +4,7 @@ module;
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <locale>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -154,26 +155,28 @@ export namespace kairo::foundation::raytracer
         }
 
         [[nodiscard]]
-        inline float ParseFloat(
-            const Token& token,
-            std::uint32_t line)
-        {
-            // std::from_chars avoids locale surprises and lets us verify that
-            // the whole token was consumed. "1abc" should not parse as 1.
-            float value = 0.0f;
-            const char* begin = token.Text.data();
-            const char* end = begin + token.Text.size();
-            const auto [ptr, ec] = std::from_chars(begin, end, value);
-            if (ec != std::errc{} || ptr != end)
-            {
-                Fail(line, token.Column, "invalid float `" + token.Text + "`.");
-            }
+inline float ParseFloat(
+    const Token& token,
+    std::uint32_t line)
+{
+    // Floating-point std::from_chars in Homebrew libc++ is gated by
+    // the macOS deployment target. A classic-locale stream preserves
+    // deterministic decimal parsing while remaining available on the
+    // supported macOS versions. Requiring EOF rejects partial tokens.
+    std::istringstream stream(token.Text);
+    stream.imbue(std::locale::classic());
+    float value = 0.0f;
+    stream >> value;
+    if (!stream || stream.peek() != std::char_traits<char>::eof())
+    {
+        Fail(line, token.Column, "invalid float `" + token.Text + "`.");
+    }
 
-            return value;
-        }
+    return value;
+}
 
-        [[nodiscard]]
-        inline std::uint32_t ParseUInt(
+[[nodiscard]]
+inline std::uint32_t ParseUInt(
             const Token& token,
             std::uint32_t line)
         {
