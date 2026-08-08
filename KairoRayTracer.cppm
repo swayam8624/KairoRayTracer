@@ -26,3 +26,4 @@ export import Kairo.Foundation.RayTracer.PBRIntegrator;
 export import Kairo.Foundation.RayTracer.PathIntegrator;
 export import Kairo.Foundation.RayTracer.Renderer;
 export import Kairo.Foundation.RayTracer.ProgressiveRenderer;
+export import Kairo.Foundation.RayTracer.OfflineRenderJob;
