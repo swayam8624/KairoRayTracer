@@ -17,7 +17,7 @@ find_package(Threads REQUIRED)
 # Standalone fallbacks are immutable merged revisions validated by the umbrella
 # integration build. Local sibling checkouts remain preferred during workspace
 # development.
-set(KAIRO_RAYTRACER_SPATIAL_REVISION bf238e02cc0b78e07c37a51c5343b726c4b29347)
+set(KAIRO_RAYTRACER_SPATIAL_REVISION 8114c1fba2875ebc28180261b9a4cbf8763d6afd)
 set(KAIRO_RAYTRACER_ASSETS_REVISION 1db4c25ecc4aeff7b6fc491c5197fdecf7e790bb)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -49,9 +49,6 @@ if(NOT TARGET KairoSpatial)
         add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../Foundation/Spatial" "${CMAKE_CURRENT_BINARY_DIR}/_deps/KairoSpatial")
     else()
         include(FetchContent)
-        # Historical immutable SHAs are not guaranteed to be reachable from a
-        # depth-1 clone. Use a normal fetch so this exact validated revision can
-        # always be checked out in standalone builds.
         FetchContent_Declare(KairoSpatial
             GIT_REPOSITORY https://github.com/swayam8624/KairoSpatial.git
             GIT_TAG ${KAIRO_RAYTRACER_SPATIAL_REVISION})
