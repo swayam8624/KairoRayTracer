@@ -68,3 +68,38 @@ TEST_CASE("spot authored light respects cone direction and range")
     CHECK(outside.g < inside.g);
     CHECK(outside.b < inside.b);
 }
+
+TEST_CASE("linear authored fog blends by primary distance")
+{
+    RenderSettings settings;
+    settings.Fog = FogMode::Linear;
+    settings.FogColor = { 1.0f, 1.0f, 1.0f };
+    settings.FogNear = 2.0f;
+    settings.FogFar = 6.0f;
+
+    const Color3f source = Color3f::Black();
+    const auto before = ApplyFog(settings, source, 1.0f);
+    const auto middle = ApplyFog(settings, source, 4.0f);
+    const auto after = ApplyFog(settings, source, 8.0f);
+
+    CHECK(before.r == 0.0f);
+    CHECK(middle.r > 0.49f);
+    CHECK(middle.r < 0.51f);
+    CHECK(after.r == 1.0f);
+}
+
+TEST_CASE("exponential authored fog increases monotonically with distance")
+{
+    RenderSettings settings;
+    settings.Fog = FogMode::Exponential;
+    settings.FogColor = { 0.2f, 0.4f, 0.8f };
+    settings.FogDensity = 0.25f;
+
+    const Color3f source = Color3f::Black();
+    const auto nearColor = ApplyFog(settings, source, 1.0f);
+    const auto farColor = ApplyFog(settings, source, 8.0f);
+
+    CHECK(farColor.r > nearColor.r);
+    CHECK(farColor.g > nearColor.g);
+    CHECK(farColor.b > nearColor.b);
+}
