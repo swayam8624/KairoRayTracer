@@ -37,7 +37,7 @@ jobs:
             }
 
             return value;
-'''
+          '''
           new = '''            // Floating-point std::from_chars in Homebrew libc++ is gated by
             // the macOS deployment target. A classic-locale stream preserves
             // deterministic decimal parsing while remaining available on the
@@ -53,7 +53,7 @@ jobs:
             }
 
             return value;
-'''
+          '''
           if old not in s:
               raise SystemExit('expected ParseFloat block not found')
           p.write_text(s.replace(old, new))
