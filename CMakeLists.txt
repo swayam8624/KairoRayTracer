@@ -14,11 +14,11 @@ option(KAIRO_RAYTRACER_BUILD_PREVIEW "Build GLFW preview executable" ON)
 
 find_package(Threads REQUIRED)
 
-# Standalone source fallbacks. During this stacked Phase 6-12 review the Assets
-# dependency follows its named integration branch; before merge the umbrella
-# pins the exact reviewed component commit.
+# Standalone fallbacks are immutable merged revisions validated by the umbrella
+# integration build. Local sibling checkouts remain preferred during workspace
+# development.
 set(KAIRO_RAYTRACER_SPATIAL_REVISION bf238e02cc0b78e07c37a51c5343b726c4b29347)
-set(KAIRO_RAYTRACER_ASSETS_REVISION agent/phases8-11-authoring-completion)
+set(KAIRO_RAYTRACER_ASSETS_REVISION 1db4c25ecc4aeff7b6fc491c5197fdecf7e790bb)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -Wno-unused-parameter)
