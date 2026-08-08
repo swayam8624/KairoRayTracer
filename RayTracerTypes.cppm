@@ -1,5 +1,7 @@
 module;
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -13,14 +15,6 @@ import Kairo.Foundation.RayTracer.Color;
 export namespace kairo::foundation::raytracer
 {
     using namespace kairo::foundation::math;
-
-    //=========================================================
-    // Render Modes
-    //
-    // V1 deliberately exposes several "debug integrators". A beauty render can
-    // hide math bugs, while normal/depth/shadow/BVH images isolate one system at
-    // a time. This is how offline renderers are usually debugged.
-    //=========================================================
 
     enum class RenderMode : std::uint8_t
     {
@@ -45,9 +39,16 @@ export namespace kairo::foundation::raytracer
         BVHMorton
     };
 
-    // RenderSettings is the small contract between scene parsing, command-line
-    // overrides, and the renderer. Keep it plain-data so tests and examples can
-    // construct scenes without hidden ownership or services.
+    // Matches the authored EngineCore environment contract. Fog is applied to
+    // primary beauty rays at the renderer boundary so every beauty integrator
+    // observes identical distance semantics without modifying recursive bounces.
+    enum class FogMode : std::uint8_t
+    {
+        Disabled,
+        Linear,
+        Exponential
+    };
+
     struct RenderSettings final
     {
         std::uint32_t Width = 800;
@@ -65,68 +66,79 @@ export namespace kairo::foundation::raytracer
         RenderMode Mode = RenderMode::Whitted;
         AccelerationMode Acceleration = AccelerationMode::BVHSAH;
         Color3f Background = { 0.02f, 0.03f, 0.05f };
+
+        FogMode Fog = FogMode::Disabled;
+        Color3f FogColor = { 0.5f, 0.5f, 0.5f };
+        float FogDensity = 0.01f;
+        float FogNear = 0.0f;
+        float FogFar = 100.0f;
     };
 
-    /// Input: render settings from parser, CLI overrides, or direct test setup.
-    /// Output: throws std::invalid_argument when a value is unsafe for rendering.
-    /// Task: protect Renderer::Render from plain-data settings that bypass parser validation.
     inline void ValidateRenderSettings(
         const RenderSettings& settings)
     {
         if (settings.Width == 0)
-        {
             throw std::invalid_argument("Render width must be greater than zero.");
-        }
-
         if (settings.Height == 0)
-        {
             throw std::invalid_argument("Render height must be greater than zero.");
-        }
-
         if (settings.SamplesPerPixel == 0)
-        {
             throw std::invalid_argument("SamplesPerPixel must be greater than zero.");
-        }
-
         if (settings.TileSize == 0)
-        {
             throw std::invalid_argument("TileSize must be greater than zero.");
-        }
-
         if (settings.DepthFar <= settings.DepthNear)
-        {
             throw std::invalid_argument("DepthFar must be greater than DepthNear.");
-        }
-
         if (settings.Width > 32768u || settings.Height > 32768u)
-        {
             throw std::invalid_argument("Render dimensions are too large; maximum supported width/height is 32768.");
-        }
-
         if (settings.SamplesPerPixel > 4096u)
-        {
             throw std::invalid_argument("SamplesPerPixel is too large; maximum supported value is 4096.");
-        }
-
         if (settings.TileSize > 4096u)
-        {
             throw std::invalid_argument("TileSize is too large; maximum supported value is 4096.");
-        }
-
         if (settings.MaxDepth > 64u)
-        {
             throw std::invalid_argument("MaxDepth is too large; maximum supported value is 64.");
-        }
-
         if (settings.ThreadCount > 1024u)
-        {
             throw std::invalid_argument("ThreadCount is too large; maximum supported value is 1024.");
-        }
+        if (!std::isfinite(settings.FogDensity) || settings.FogDensity < 0.0f)
+            throw std::invalid_argument("FogDensity must be finite and non-negative.");
+        if (!std::isfinite(settings.FogNear) || !std::isfinite(settings.FogFar))
+            throw std::invalid_argument("FogNear and FogFar must be finite.");
+        if (settings.Fog == FogMode::Linear && settings.FogFar <= settings.FogNear)
+            throw std::invalid_argument("Linear fog requires FogFar greater than FogNear.");
     }
 
-    // RenderStats is intentionally approximate and cheap. It is not a profiler;
-    // it is a sanity view that answers: did rays fire, did the BVH traverse, and
-    // is a mode unexpectedly doing too much work?
+    [[nodiscard]]
+    inline float FogAmount(
+        const RenderSettings& settings,
+        float distance) noexcept
+    {
+        if (settings.Fog == FogMode::Disabled)
+            return 0.0f;
+
+        if (!std::isfinite(distance))
+            return 1.0f;
+
+        const float clampedDistance = std::max(distance, 0.0f);
+        if (settings.Fog == FogMode::Linear)
+        {
+            const float span = std::max(settings.FogFar - settings.FogNear, 1.0e-6f);
+            return std::clamp((clampedDistance - settings.FogNear) / span, 0.0f, 1.0f);
+        }
+
+        return std::clamp(
+            1.0f - std::exp(-settings.FogDensity * clampedDistance),
+            0.0f,
+            1.0f);
+    }
+
+    [[nodiscard]]
+    inline Color3f ApplyFog(
+        const RenderSettings& settings,
+        const Color3f& surface,
+        float distance) noexcept
+    {
+        const float amount = FogAmount(settings, distance);
+        return surface * (1.0f - amount) + settings.FogColor * amount;
+    }
+
     struct RenderStats final
     {
         std::uint64_t PrimaryRays = 0;
@@ -170,20 +182,13 @@ export namespace kairo::foundation::raytracer
     inline void FinalizeDerivedStats(
         RenderStats& stats) noexcept
     {
-        const double totalRays =
-            static_cast<double>(TotalRays(stats));
-
-        const double seconds =
-            stats.RenderMilliseconds / 1000.0;
-
-        stats.RaysPerSecond =
-            seconds > 0.0 ? totalRays / seconds : 0.0;
-
+        const double totalRays = static_cast<double>(TotalRays(stats));
+        const double seconds = stats.RenderMilliseconds / 1000.0;
+        stats.RaysPerSecond = seconds > 0.0 ? totalRays / seconds : 0.0;
         stats.PrimitiveTestsPerRay =
             totalRays > 0.0
                 ? static_cast<double>(stats.BVHTestedPrimitives) / totalRays
                 : 0.0;
-
         stats.NodesVisitedPerRay =
             totalRays > 0.0
                 ? static_cast<double>(stats.BVHVisitedNodes) / totalRays
@@ -213,13 +218,9 @@ export namespace kairo::foundation::raytracer
         case AccelerationMode::BVHSAH: return "sah";
         case AccelerationMode::BVHMorton: return "morton";
         }
-
         return "unknown";
     }
 
-    // SurfaceHit is richer than SpatialRayHit because shading needs material,
-    // normal, UV, and render primitive identity. Spatial remains a broadphase
-    // acceleration layer; this struct is the renderer's shading record.
     struct SurfaceHit final
     {
         bool Hit = false;
@@ -231,8 +232,6 @@ export namespace kairo::foundation::raytracer
         std::uint32_t MaterialIndex = std::numeric_limits<std::uint32_t>::max();
     };
 
-    // SceneParseError is separate from std::runtime_error so tests and tools can
-    // inspect exact source locations without parsing error strings.
     struct SceneParseError final
     {
         std::uint32_t Line = 0;
@@ -259,7 +258,6 @@ export namespace kairo::foundation::raytracer
         case RenderMode::PBR: return "pbr";
         case RenderMode::Path: return "path";
         }
-
         return "unknown";
     }
 }
