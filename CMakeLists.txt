@@ -12,6 +12,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(KAIRO_RAYTRACER_BUILD_TESTS "Build KairoRayTracer tests" ${PROJECT_IS_TOP_LEVEL})
 option(KAIRO_RAYTRACER_BUILD_PREVIEW "Build GLFW preview executable" ON)
 
+find_package(Threads REQUIRED)
+
 # Standalone source fallback aligned with the spatial revision exercised by the
 # workspace superbuild. Local sibling and explicit source paths remain first.
 set(KAIRO_RAYTRACER_SPATIAL_REVISION bf238e02cc0b78e07c37a51c5343b726c4b29347)
@@ -89,7 +91,7 @@ target_sources(KairoRayTracer
             KairoRayTracer.cppm
 )
 
-target_link_libraries(KairoRayTracer PUBLIC KairoSpatial KairoAssets)
+target_link_libraries(KairoRayTracer PUBLIC KairoSpatial KairoAssets Threads::Threads)
 
 add_executable(KairoRayTracerCLI examples/cli.cpp)
 target_link_libraries(KairoRayTracerCLI PRIVATE KairoRayTracer)
