@@ -262,7 +262,7 @@ export namespace kairo::foundation::raytracer
             const float lightDistance = toLight.Length();
             if (lightDistance <= 1.0e-4f || lightDistance > light.Range) continue;
             const Vec3f lightDirection = toLight / lightDistance;
-            const float coneCosine = Dot(SafeNormalize(light.Direction, Vec3f::Forward()), -lightDirection);
+            const float coneCosine = Dot(SafeNormalize(light.Direction, Vec3f{ 0.0f, 0.0f, -1.0f }), -lightDirection);
             const float coneWidth = std::max(light.InnerConeCosine - light.OuterConeCosine, 1.0e-5f);
             const float cone = std::clamp((coneCosine - light.OuterConeCosine) / coneWidth, 0.0f, 1.0f);
             if (cone <= 0.0f) continue;

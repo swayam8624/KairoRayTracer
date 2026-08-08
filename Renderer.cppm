@@ -4,6 +4,7 @@ module;
 #include <cstdint>
 #include <atomic>
 #include <algorithm>
+#include <cmath>
 #include <thread>
 #include <vector>
 

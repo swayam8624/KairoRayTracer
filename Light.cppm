@@ -26,7 +26,7 @@ export namespace kairo::foundation::raytracer
     // distance because the source is treated as infinitely far away.
     struct DirectionalLight final
     {
-        Vec3f Direction = -Vec3f::Up();
+        Vec3f Direction = Vec3f{ 0.0f, -1.0f, 0.0f };
         Color3f Color = Color3f::White();
         float Illuminance = 1.0f;
     };
@@ -37,7 +37,7 @@ export namespace kairo::foundation::raytracer
     struct SpotLight final
     {
         Vec3f Position = Vec3f::Zero();
-        Vec3f Direction = Vec3f::Forward();
+        Vec3f Direction = Vec3f{ 0.0f, 0.0f, -1.0f };
         Color3f Color = Color3f::White();
         float Intensity = 1.0f;
         float Range = 10.0f;
@@ -49,7 +49,7 @@ export namespace kairo::foundation::raytracer
     {
         Vec3f Position = Vec3f::Zero();
         Vec3f U = Vec3f::UnitX();
-        Vec3f V = Vec3f::Forward();
+        Vec3f V = Vec3f{ 0.0f, 0.0f, -1.0f };
         Color3f Color = Color3f::White();
         float Intensity = 1.0f;
         std::uint32_t Samples = 4;
