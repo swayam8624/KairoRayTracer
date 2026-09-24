@@ -17,8 +17,8 @@ find_package(Threads REQUIRED)
 # Standalone fallbacks are immutable merged revisions validated by the umbrella
 # integration build. Local sibling checkouts remain preferred during workspace
 # development.
-set(KAIRO_RAYTRACER_SPATIAL_REVISION 860aa8024e4cd14146165f91f31a70afe1bd0eee)
-set(KAIRO_RAYTRACER_ASSETS_REVISION 1db4c25ecc4aeff7b6fc491c5197fdecf7e790bb)
+set(KAIRO_RAYTRACER_SPATIAL_REVISION f9cdedbed0b2793083b83de8d1d049ef16237dc8)
+set(KAIRO_RAYTRACER_ASSETS_REVISION 961372f4cb43dc00676660213a73bf556ea91d6a)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     add_compile_options(-Wall -Wextra -Wno-unused-parameter)
