@@ -1,0 +1,13 @@
+schema: kairo.research-track.v1
+track: R6
+title: Cross-backend semantic differential rendering
+state: hypothesis
+role: backend_independent_reference_oracle
+problem: Raster backend differences are difficult to distinguish from scene-semantic or numerical differences without an independent reference.
+hypothesis: A deterministic CPU reference renderer plus semantic/depth/normal outputs can improve localization of injected backend faults over pixel-only comparison.
+baselines: [pixel_l1, ssim_only, depth_only, manual_debugging]
+workloads: [canonical_pbr, shadow_visibility, animation_and_skinning, material_sweeps, injected_faults]
+metrics: [fault_localization_accuracy, localization_rank, false_positive_rate, image_error, time_to_localize]
+ablations: [no_reference_renderer, no_semantic_ids, no_depth_normals]
+failure_cases: [stochastic_sampling, precision_only_difference, visually_equivalent_paths]
+falsification: Reject if reference plus semantic signals do not improve held-out fault localization over pixel/reference-only baselines.
