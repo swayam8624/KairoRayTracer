@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+import Kairo.Foundation.RayTracer.Color;
 import Kairo.Foundation.RayTracer.Film;
 
 import Kairo.Foundation.RayTracer.OfflineRenderJob;
