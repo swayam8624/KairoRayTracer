@@ -49,13 +49,17 @@ TEST_CASE("Film resizing rejects invalid geometry without changing the live imag
     CHECK(image.Width() == 2u);
     CHECK(image.Height() == 2u);
     CHECK(image.Pixels().size() == 4u);
-    CHECK(image.GetPixel(0u, 0u) == original);
+    CHECK(image.GetPixel(0u, 0u).r == original.r);
+    CHECK(image.GetPixel(0u, 0u).g == original.g);
+    CHECK(image.GetPixel(0u, 0u).b == original.b);
 
     image.Resize(3u, 1u);
     CHECK(image.Width() == 3u);
     CHECK(image.Height() == 1u);
     CHECK(image.Pixels().size() == 3u);
-    CHECK(image.GetPixel(0u, 0u) == Color3f::Black());
+    CHECK(image.GetPixel(0u, 0u).r == 0.0f);
+    CHECK(image.GetPixel(0u, 0u).g == 0.0f);
+    CHECK(image.GetPixel(0u, 0u).b == 0.0f);
 }
 
 TEST_CASE("Offline render snapshot remains available during ongoing passes")
