@@ -92,7 +92,18 @@ export namespace kairo::foundation::raytracer
             OfflineRenderJobState expected = OfflineRenderJobState::Idle;
             if (!m_State.compare_exchange_strong(expected, OfflineRenderJobState::Running))
                 throw std::logic_error("Offline render job can only be started once.");
-            m_Worker = std::jthread([this](std::stop_token token) { Run(token); });
+            try
+            {
+                m_Worker = std::jthread([this](std::stop_token token) { Run(token); });
+            }
+            catch (...)
+            {
+                // Thread creation can throw (for example under host resource
+                // exhaustion). Do not leave a job stuck in Running forever
+                // without a worker or prevent it from being restarted.
+                m_State.store(OfflineRenderJobState::Idle);
+                throw;
+            }
         }
 
         void Cancel() noexcept
@@ -162,8 +173,11 @@ export namespace kairo::foundation::raytracer
                             m_Accumulated.emplace(rendered.Image.Width(), rendered.Image.Height());
                         for (std::size_t i = 0u; i < rendered.Image.Pixels().size(); ++i)
                             m_Accumulated->Pixels()[i] += rendered.Image.Pixels()[i];
+                        // The pass count and its pixel sum are one logical
+                        // snapshot. A preview cannot divide N+1 samples by
+                        // the old count N after observing newly added pixels.
+                        m_Completed.store(pass + 1u);
                     }
-                    m_Completed.store(pass + 1u);
                 }
                 m_State.store(OfflineRenderJobState::Completed);
             }
