@@ -42,11 +42,14 @@ export namespace kairo::foundation::raytracer
                 throw std::invalid_argument("Film dimensions must be non-zero.");
             }
 
-            m_Width = width;
-            m_Height = height;
-            m_Pixels.assign(
+            // Allocate first. If the new image does not fit in memory,
+            // preserve both existing pixel contents and the old dimensions.
+            std::vector<Color3f> replacement(
                 static_cast<std::size_t>(width) * static_cast<std::size_t>(height),
                 Color3f::Black());
+            m_Pixels.swap(replacement);
+            m_Width = width;
+            m_Height = height;
         }
 
         [[nodiscard]]
