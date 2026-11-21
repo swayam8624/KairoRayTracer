@@ -1,3 +1,9 @@
+// TEACHING MAP — PreviewWindow.cppm
+// Interactive CPU ray tracing preview/viewer, consuming progressively accumulated Film
+// pixels. The host UI does not own scene/BSDF math or transform the offline renderer into a
+// GPU backend.
+// See READING_ORDER.md for CPU ray path, API consumers and verification scope.
+
 module;
 
 #define GL_SILENCE_DEPRECATION
