@@ -1,3 +1,4 @@
+// TEACHING MODULE: CPU render entrypoint coordinates pixel samples, Camera ray generation, Scene hit lookup, mode-specific integrators and Film output, possibly across CPU threads. Native GPU display is a separate host concern.
 module;
 
 #include <chrono>
