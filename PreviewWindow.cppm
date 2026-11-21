@@ -1,3 +1,4 @@
+// TEACHING MODULE: GLFW/OpenGL lightweight host preview reads completed Film pixels for display and interactive controls. It is separate from KairoRenderer's modern backend rendering; OpenGL window/context lifetime must remain on the host thread.
 module;
 
 #define GL_SILENCE_DEPRECATION
