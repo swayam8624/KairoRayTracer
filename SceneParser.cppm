@@ -1,3 +1,4 @@
+// TEACHING MODULE: Reads authored line-oriented .kairo scene DSL with token validation, resolves material/texture/mesh references and surfaces line-aware parse errors. Reader does not own renderer devices or image output.
 module;
 
 #include <charconv>
