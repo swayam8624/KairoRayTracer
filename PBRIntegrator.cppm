@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Physically based BRDF/light evaluation after Scene intersection; materials/light sampling must agree
+// on energy and coordinate conventions.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <cstdint>
