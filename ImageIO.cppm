@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Writes accumulated Film images to supported file formats; check tone mapping, precision and
+// orientation separately from lighting computations.
+// See docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <filesystem>
