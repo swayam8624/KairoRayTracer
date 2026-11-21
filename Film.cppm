@@ -1,3 +1,4 @@
+// TEACHING MODULE: Film owns the linear-RGB image buffer and validates dimensions. Renderer writes pixel values, ProgressiveRenderer accumulates passes, ImageIO owns external formats. Film is not a GPU render target.
 module;
 
 #include <cstdint>
