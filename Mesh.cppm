@@ -1,3 +1,4 @@
+// TEACHING MODULE: MeshTriangle stores triangle geometry plus optional per-vertex normals and UVs; OBJLoader adapts imported artifacts to these structs. Scene builds primitives/BVH; Mesh owns no acceleration index.
 module;
 
 #include <vector>
