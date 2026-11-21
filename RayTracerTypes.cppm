@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Shared render settings and statistics used by Scene, Renderer and integrators. Validate dimensions,
+// sample counts and recursion limits before allocating film and scheduling tiles.
+// See docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <algorithm>
