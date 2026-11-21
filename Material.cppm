@@ -1,3 +1,9 @@
+// TEACHING MAP — Material.cppm
+// Surface material/BSDF parameter contract. Shading and integrators evaluate
+// reflection/transmission at ray hits; material energy behavior affects Monte Carlo
+// estimators and physically based output.
+// See READING_ORDER.md for source-to-scene-to-integrator interactions.
+
 module;
 
 #include <cstdint>
