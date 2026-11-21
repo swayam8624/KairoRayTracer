@@ -1,3 +1,4 @@
+// TEACHING MODULE: Image exporters convert Film pixels to PPM/other formats with output color encoding and file IO. ImageIO does not trace rays; file errors and dimension limits belong here, not to material shading.
 module;
 
 #include <filesystem>
