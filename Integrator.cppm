@@ -1,3 +1,9 @@
+// TEACHING MAP — Integrator.cppm
+// General radiance integration API invoked by Renderer for each camera ray. Implementations
+// choose depth, normal, Whitted, PBR or path-tracing algorithms over the same Scene/material
+// contracts.
+// Follow READING_ORDER.md for integrator/camera/material/film API boundaries.
+
 module;
 
 #include <string>
