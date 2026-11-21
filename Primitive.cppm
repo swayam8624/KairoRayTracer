@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Scene primitive intersection and material association, using KairoGeometry shapes.
+// Scene/acceleration queries use these before lighting integrators evaluate hit shading.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <algorithm>
