@@ -1,3 +1,4 @@
+// TEACHING MODULE: Owns camera, materials, lights, textures, primitive array and BVH acceleration data. Scene::Intersect returns closest SurfaceHit using KairoSpatial candidates and actual primitive intersection; output is not a physics contact manifold.
 module;
 
 #include <cstdint>
