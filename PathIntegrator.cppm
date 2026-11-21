@@ -1,3 +1,4 @@
+// TEACHING MODULE: Monte Carlo light transport traces stochastic reflection/scattering paths, accumulating throughput and environment/emission contributions. Random01 and cosine hemisphere sampling need documented PDF weights and seed policy; this is CPU path tracing, not GPU shading.
 module;
 
 #include <algorithm>
