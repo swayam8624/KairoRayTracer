@@ -1,3 +1,4 @@
+// TEACHING MODULE: Maps user-facing integrator names to typed RenderMode enum, allowing Renderer to select normal/depth/Whitted/PBR/path modes. String parsing must reject unsupported names before costly rendering.
 module;
 
 #include <string>
