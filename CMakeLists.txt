@@ -1,3 +1,4 @@
+# TEACHING BUILD: Build links separate KairoMath, Geometry, Spatial and Assets module libraries, optional Catch2 tests and GLFW/OpenGL preview. Native window/graphics dependencies require host-specific acceptance.
 cmake_minimum_required(VERSION 3.28)
 project(KairoRayTracer LANGUAGES CXX)
 
