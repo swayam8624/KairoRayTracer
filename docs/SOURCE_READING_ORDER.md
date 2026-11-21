@@ -10,28 +10,28 @@ Read each phase in order. Every link goes to a source file or directory in this 
 
 ## 1. Concepts and build
 
-1. [`README.md`](README.md)
-2. [`CMakeLists.txt`](CMakeLists.txt)
+1. [`README.md`](../README.md)
+2. [`CMakeLists.txt`](../CMakeLists.txt)
 
 ## 2. Scene and rendering code
 
-1. [`KairoRayTracer.cppm`](KairoRayTracer.cppm)
-2. [`Scene.cppm`](Scene.cppm)
-3. [`RayTracerTypes.cppm`](RayTracerTypes.cppm)
-4. [`Camera.cppm`](Camera.cppm)
-5. [`SceneParser.cppm`](SceneParser.cppm)
-6. [`Primitive.cppm`](Primitive.cppm)
-7. [`Material.cppm`](Material.cppm)
-8. [`WhittedIntegrator.cppm`](WhittedIntegrator.cppm)
-9. [`PathIntegrator.cppm`](PathIntegrator.cppm)
-10. [`Renderer.cppm`](Renderer.cppm)
-11. [`scenes`](scenes)
+1. [`KairoRayTracer.cppm`](../KairoRayTracer.cppm)
+2. [`Scene.cppm`](../Scene.cppm)
+3. [`RayTracerTypes.cppm`](../RayTracerTypes.cppm)
+4. [`Camera.cppm`](../Camera.cppm)
+5. [`SceneParser.cppm`](../SceneParser.cppm)
+6. [`Primitive.cppm`](../Primitive.cppm)
+7. [`Material.cppm`](../Material.cppm)
+8. [`WhittedIntegrator.cppm`](../WhittedIntegrator.cppm)
+9. [`PathIntegrator.cppm`](../PathIntegrator.cppm)
+10. [`Renderer.cppm`](../Renderer.cppm)
+11. [`scenes`](../scenes)
 
 ## 3. Verification and outputs
 
-1. [`tests`](tests)
-2. [`outputs/gallery`](outputs/gallery)
-3. [`research`](research)
+1. [`tests`](../tests)
+2. [`outputs/gallery`](../outputs/gallery)
+3. [`research`](../research)
 
 ## End-to-end interaction map
 
