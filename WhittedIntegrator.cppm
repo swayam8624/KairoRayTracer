@@ -1,3 +1,4 @@
+// TEACHING MODULE: Recursive deterministic ray tracing of mirror/glass rays plus direct light/shadows. Max bounce depth bounds recursion; differs from randomized Monte Carlo path integration.
 module;
 
 #include <cstdint>
