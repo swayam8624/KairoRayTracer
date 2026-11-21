@@ -1,3 +1,4 @@
+// TEACHING MODULE: Contains render mode/settings, acceleration policies, fog and RenderStats records. Validation should precede camera ray generation and worker launch. EngineCore authored settings require explicit conversion.
 module;
 
 #include <algorithm>
