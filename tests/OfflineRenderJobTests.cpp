@@ -1,3 +1,4 @@
+// TEACHING FILE: Tests the offline job's state/progress and snapshot availability and verifies Film resizing preserves data on invalid dimensions. The job's worker lifetime and synchronization are separate from renderer color correctness.
 #include <catch2/catch_test_macros.hpp>
 
 #include <stdexcept>
