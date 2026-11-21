@@ -1,3 +1,4 @@
+// TEACHING MODULE: Color3f carries LINEAR RGB radiance/albedo for lighting accumulation. Film stores linear color; ImageIO applies tone/gamma encoding only when exporting viewable bytes. Clamping intermediate lighting would lose HDR energy.
 module;
 
 #include <algorithm>
