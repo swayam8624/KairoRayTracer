@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Scene owns cameras, objects and lighting inputs consumed by the CPU Renderer and integrators.
+// SceneParser supplies authored files; Geometry/Spatial support intersection and acceleration.
+// Cross-file guide: docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <cstdint>

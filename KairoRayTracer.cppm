@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Umbrella module reexports camera, scene, geometry-facing rays, integrators, film and image output;
+// consumers can import narrow modules to reduce coupling.
+// Cross-file guide: docs/SOURCE_READING_ORDER.md.
+
 export module Kairo.Foundation.RayTracer;
 
 // Umbrella module for users who want the complete V1 ray tracer surface through

@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Texture loading and sampling API used by Material/Integrators and possibly OBJ UV mapping. Track
+// color-space and filtering semantics.
+// See docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <algorithm>

@@ -1,3 +1,9 @@
+// SOURCE STUDY NOTE:
+// Executable front end for scene parsing, render settings and image output. Trace CLI arguments to
+// SceneParser, Renderer and ImageIO; errors must be surfaced without implying that CPU rendering is a
+// GPU backend.
+// See docs/SOURCE_READING_ORDER.md.
+
 #include <filesystem>
 #include <iostream>
 #include <charconv>

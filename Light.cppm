@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Emitter/light-sampling contracts provide radiance estimates to integrators. Direct-light and path
+// tracing algorithms require consistent probability-density conventions.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <cstdint>

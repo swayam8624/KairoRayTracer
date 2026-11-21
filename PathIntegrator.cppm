@@ -1,3 +1,9 @@
+// SOURCE STUDY NOTE:
+// Path tracing light transport path called by Renderer using Scene and Sampler, then accumulating
+// radiance in Film. Distinguish sampling variance and path termination from deterministic shape
+// intersections.
+// Cross-file guide: docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <algorithm>

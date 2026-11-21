@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Pixel accumulation/output surface owned by render results. Renderer/ProgressiveRenderer fill it
+// while ImageIO encodes files; film dimensions and sample accumulation must remain coherent.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <cstdint>

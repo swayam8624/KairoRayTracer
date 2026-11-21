@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Mesh geometry representation and ray intersections, consumed by Scene and Spatial acceleration.
+// OBJLoader supplies imported positions/normals/UVs.
+// See docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <vector>

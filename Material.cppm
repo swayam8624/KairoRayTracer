@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Surface material parameters affect reflection, transmission and path sampling.
+// PBRIntegrator/PathIntegrator consume these values after geometric intersection.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <cstdint>

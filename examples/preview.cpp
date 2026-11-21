@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Interactive preview example consuming CPU ray-tracer frames. Distinguish host presentation from the
+// integrators that compute radiance.
+// See docs/SOURCE_READING_ORDER.md.
+
 #include <algorithm>
 #include <charconv>
 #include <cstdint>

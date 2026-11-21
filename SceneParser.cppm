@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Parses authored scene descriptions into Scene objects, material/mesh references and render settings.
+// Treat input as untrusted and validate referenced assets before Renderer consumes the scene.
+// See docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <charconv>

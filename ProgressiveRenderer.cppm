@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Progressive sample accumulation updates Film across passes; interrupt/restart, seed order, and
+// resolution changes affect whether accumulated results are valid.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <cstdint>

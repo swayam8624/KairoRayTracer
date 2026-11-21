@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Per-pixel/per-path sample generation used by Renderer and Monte Carlo integrators. Reproducibility
+// depends on seed, sample order and thread scheduling.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <algorithm>

@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Camera maps pixels/sample positions into world-space rays using KairoMath/KairoGeometry conventions;
+// Renderer selects pixel locations and Integrator evaluates radiance along rays.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <cmath>
