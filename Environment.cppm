@@ -1,3 +1,9 @@
+// TEACHING MAP — Environment.cppm
+// Background/environment radiance evaluation for rays that miss surfaces. Path and Whitted
+// integrators consume it; sampling/importance integration has its own variance/accuracy
+// limits.
+// See READING_ORDER.md for source-to-scene-to-integrator interactions.
+
 module;
 
 #include <algorithm>
