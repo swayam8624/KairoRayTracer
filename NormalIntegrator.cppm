@@ -1,3 +1,4 @@
+// TEACHING MODULE: Diagnostic nearest-hit normal visualization maps [-1,1] unit-vector components to RGB [0,1]; reveals winding/normal bugs without BRDF/light complexity.
 module;
 
 #include <optional>
