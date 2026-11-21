@@ -182,6 +182,7 @@ export namespace kairo::foundation::raytracer
             Primitives.push_back(primitive);
         }
 
+        /// TEACHING API: void BuildAcceleration( — Convert source primitives into KairoSpatial bounded records and construct chosen BVH; brute-force path remains an oracle.
         void BuildAcceleration()
         {
             if (Settings.Acceleration == AccelerationMode::BruteForce)
@@ -215,6 +216,7 @@ export namespace kairo::foundation::raytracer
         }
 
         [[nodiscard]]
+        /// TEACHING API: std::optional<SurfaceHit> Intersect( — Use acceleration candidates then exact primitive hit test to return nearest SurfaceHit and material/UV data.
         std::optional<SurfaceHit> Intersect(
             const Rayf& ray,
             RenderStats* stats = nullptr) const
@@ -284,6 +286,7 @@ export namespace kairo::foundation::raytracer
         }
 
         [[nodiscard]]
+        /// TEACHING API: std::optional<SurfaceHit> BruteForceIntersect( — Check every primitive directly; useful to verify BVH hit equivalence on small scenes.
         std::optional<SurfaceHit> BruteForceIntersect(
             const Rayf& ray,
             RenderStats* stats = nullptr) const
@@ -316,6 +319,7 @@ export namespace kairo::foundation::raytracer
         }
 
         [[nodiscard]]
+        /// TEACHING API: bool Occluded( — Return whether any blocker lies along shadow ray before light distance; do not confuse with nearest-hit shading.
         bool Occluded(
             const Rayf& ray,
             float maxDistance,
