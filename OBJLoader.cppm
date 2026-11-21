@@ -1,3 +1,4 @@
+// TEACHING MODULE: KairoAssets owns source OBJ parsing, normal generation and validation; this adapter converts its portable mesh artifact to ray-tracer triangles with authored scale/translation.
 module;
 
 #include <cmath>
