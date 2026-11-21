@@ -1,3 +1,8 @@
+// TEACHING MAP — DepthIntegrator.cppm
+// Debug integrator visualizing ray-hit distance or depth. Camera and Scene determine units;
+// this diagnostic output is not final material/light radiance.
+// Follow READING_ORDER.md for integrator/camera/material/film API boundaries.
+
 module;
 
 #include <algorithm>
