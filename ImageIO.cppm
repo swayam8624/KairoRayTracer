@@ -1,3 +1,8 @@
+// TEACHING MAP — ImageIO.cppm
+// Encodes Film radiance into output images and metadata. Keep linear HDR accumulations
+// separate from display tonemapping and low dynamic range serialization.
+// See READING_ORDER.md for CPU ray path, API consumers and verification scope.
+
 module;
 
 #include <filesystem>
