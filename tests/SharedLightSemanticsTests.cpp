@@ -1,3 +1,9 @@
+// TEACHING MAP — tests/SharedLightSemanticsTests.cpp
+// Checks that light definitions and direct illumination agree with shared KairoRenderer scene
+// semantics where contracts overlap; equivalent inputs require compatible meaning, not
+// necessarily identical images.
+// See READING_ORDER.md for CPU ray path, API consumers and verification scope.
+
 #include <catch2/catch_test_macros.hpp>
 
 import Kairo.Foundation.RayTracer;
