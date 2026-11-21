@@ -1,3 +1,4 @@
+// TEACHING MODULE: Central material, texture and environment lookup rules used by different integrators. Helpers enforce consistent surface-albedo and miss radiance across Whitted/PBR/path modes.
 module;
 
 #include <stdexcept>
