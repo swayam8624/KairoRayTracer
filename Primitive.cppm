@@ -1,3 +1,8 @@
+// TEACHING MAP — Primitive.cppm
+// Public geometric primitive/intersection adapter built over KairoGeometry/KairoSpatial.
+// Scene owns instances and materials; integrators query nearest hits through this interface.
+// Follow READING_ORDER.md from camera rays to hit shading and film output.
+
 module;
 
 #include <algorithm>
