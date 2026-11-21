@@ -1,3 +1,4 @@
+// TEACHING MODULE: Direct illumination uses Cook-Torrance microfacet GGX/Fresnel/geometry factors and scene shadow checks. It is an integrator for surface lighting, not automatically full multibounce global illumination.
 module;
 
 #include <cstdint>
