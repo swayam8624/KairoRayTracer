@@ -1,3 +1,4 @@
+// TEACHING MODULE: Deterministic per-pixel hashing and stratified offsets for anti-aliasing. Sample position affects primary rays; statistical convergence depends on distribution and sample count.
 module;
 
 #include <algorithm>
