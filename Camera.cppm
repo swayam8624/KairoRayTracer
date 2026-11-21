@@ -1,3 +1,4 @@
+// TEACHING MODULE: Camera generates one primary ray per pixel/sample from a position, orthonormal view basis, FOV and aspect ratio. KairoMath supplies vector math; Scene/Renderer consume rays. This pinhole camera has no depth-of-field or motion blur.
 module;
 
 #include <cmath>
