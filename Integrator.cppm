@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Integrator shared interface/selection contract. Renderer dispatches an appropriate normal, depth,
+// Whitted, PBR or path tracing strategy; Film stores returned radiance.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <string>
