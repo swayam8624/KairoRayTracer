@@ -1,3 +1,4 @@
+// TEACHING MODULE: Diagnostic integrator maps nearest SurfaceHit distance into grayscale between configured near/far. Scene::Intersect owns geometry/BVH lookup; depth view does not evaluate material or lighting.
 module;
 
 #include <algorithm>
