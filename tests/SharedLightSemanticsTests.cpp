@@ -1,3 +1,4 @@
+// TEACHING FILE: Cross-integrator tests ensure directional/spot authored lights and fog behave consistently between Whitted/PBR modes. These are limited semantic reference scenes, not full photometric validation.
 #include <catch2/catch_test_macros.hpp>
 
 import Kairo.Foundation.RayTracer;
