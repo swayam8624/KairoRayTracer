@@ -51,3 +51,55 @@ Inspect actual source-tree variants before assuming advanced textures, denoising
 - Preserve behavior during documentation-only edits; keep correctness changes in separate reviewed commits.
 - Link function names and tests where possible; mark claims as source-present, CI-observed, host-verified or research-evidenced.
 - License grants apply only to material for which the repository owner holds rights; third-party source, models, media and datasets keep their own notices.
+
+
+## Complete source-file inventory
+
+After the curated teaching path, follow this deterministic inventory of first-party source, scripts, shaders, and tests. Grouping is a suggested learning order, not an indication that every function is already annotated. Vendored dependencies, ROMs, binaries, data, media, and generated evidence are excluded.
+
+### Entry points and build (1)
+
+1. [`CMakeLists.txt`](../CMakeLists.txt)
+
+### Interfaces and modules (27)
+
+1. [`Camera.cppm`](../Camera.cppm)
+2. [`Color.cppm`](../Color.cppm)
+3. [`DepthIntegrator.cppm`](../DepthIntegrator.cppm)
+4. [`Environment.cppm`](../Environment.cppm)
+5. [`Film.cppm`](../Film.cppm)
+6. [`ImageIO.cppm`](../ImageIO.cppm)
+7. [`Integrator.cppm`](../Integrator.cppm)
+8. [`KairoRayTracer.cppm`](../KairoRayTracer.cppm)
+9. [`Light.cppm`](../Light.cppm)
+10. [`Material.cppm`](../Material.cppm)
+11. [`Mesh.cppm`](../Mesh.cppm)
+12. [`NormalIntegrator.cppm`](../NormalIntegrator.cppm)
+13. [`OBJLoader.cppm`](../OBJLoader.cppm)
+14. [`OfflineRenderJob.cppm`](../OfflineRenderJob.cppm)
+15. [`PathIntegrator.cppm`](../PathIntegrator.cppm)
+16. [`PBRIntegrator.cppm`](../PBRIntegrator.cppm)
+17. [`PreviewWindow.cppm`](../PreviewWindow.cppm)
+18. [`Primitive.cppm`](../Primitive.cppm)
+19. [`ProgressiveRenderer.cppm`](../ProgressiveRenderer.cppm)
+20. [`RayTracerTypes.cppm`](../RayTracerTypes.cppm)
+21. [`Renderer.cppm`](../Renderer.cppm)
+22. [`Sampler.cppm`](../Sampler.cppm)
+23. [`Scene.cppm`](../Scene.cppm)
+24. [`SceneParser.cppm`](../SceneParser.cppm)
+25. [`Shading.cppm`](../Shading.cppm)
+26. [`Texture.cppm`](../Texture.cppm)
+27. [`WhittedIntegrator.cppm`](../WhittedIntegrator.cppm)
+
+### Implementation and other source (2)
+
+1. [`examples/cli.cpp`](../examples/cli.cpp)
+2. [`examples/preview.cpp`](../examples/preview.cpp)
+
+### Verification and tests (3)
+
+1. [`tests/OfflineRenderJobTests.cpp`](../tests/OfflineRenderJobTests.cpp)
+2. [`tests/RayTracerTests.cpp`](../tests/RayTracerTests.cpp)
+3. [`tests/SharedLightSemanticsTests.cpp`](../tests/SharedLightSemanticsTests.cpp)
+
+Snapshot totals: 33 first-party source/build/test files, 70 tracked files overall. Re-audit when files are renamed or added.
