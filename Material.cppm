@@ -1,3 +1,4 @@
+// TEACHING MODULE: Material is a scene record for Lambert, mirror, glass, emissive and rough-metal PBR modes. Shading helpers centralize albedo/texture and BRDF lookup; integrators decide scattering and visibility.
 module;
 
 #include <cstdint>
