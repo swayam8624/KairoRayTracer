@@ -1,3 +1,9 @@
+// TEACHING MAP — Renderer.cppm
+// Orchestrates camera rays, per-pixel integrator calls and Film accumulation. The CPU
+// renderer owns scheduling/frames; Scene owns geometry and lights, and ImageIO writes
+// results.
+// Follow READING_ORDER.md for integrator/camera/material/film API boundaries.
+
 module;
 
 #include <chrono>
