@@ -1,3 +1,4 @@
+// TEACHING MODULE: Accumulates independent sample passes and averages completed linear Film results. This is a scheduling/preview mode over a chosen integrator; it does not change the BRDF or sampling law.
 module;
 
 #include <cstdint>
