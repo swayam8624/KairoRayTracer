@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// OBJ data importer for meshes/material references. Verify indices, triangle winding, and path
+// constraints before Scene uses the geometry.
+// See docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <cmath>
