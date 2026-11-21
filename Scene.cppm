@@ -1,3 +1,9 @@
+// TEACHING MAP — Scene.cppm
+// Owns scene objects, lights, materials and acceleration queries used by integrators. Parser
+// and OBJLoader construct instances, while renderers read without mutating authored source
+// data.
+// Follow READING_ORDER.md from camera rays to hit shading and film output.
+
 module;
 
 #include <cstdint>
