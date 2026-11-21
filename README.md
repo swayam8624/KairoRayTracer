@@ -1,5 +1,7 @@
 # KairoRayTracer
 
+> **Study the source:** The [linked teaching reading guide](docs/SOURCE_READING_ORDER.md) explains modules, API boundaries, dependencies, tests, and key data flows. Original project-owned code and documentation are proposed under the [MIT License](LICENSE) for learning, reuse and further development. Third-party materials retain their respective rights; provenance should be reviewed before redistribution.
+
 `KairoRayTracer` is a standalone CPU renderer in the Kairo workspace. It is the
 first visible graphics artifact that forces the foundation stack to work
 together:
