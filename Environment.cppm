@@ -1,3 +1,4 @@
+// TEACHING MODULE: EnvironmentLight returns directional radiance for rays leaving the scene, optionally sampled from lat-long texture. This is illumination, unlike a debug background color; integrators use it on misses and reflection paths.
 module;
 
 #include <algorithm>
