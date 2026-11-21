@@ -1,3 +1,8 @@
+// TEACHING MAP — Texture.cppm
+// CPU image/texture lookup APIs for material sampling. OBJLoader supplies UV coordinates;
+// Shading reads filtered texture values with explicit color-space semantics.
+// See READING_ORDER.md for source-to-scene-to-integrator interactions.
+
 module;
 
 #include <algorithm>
