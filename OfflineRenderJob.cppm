@@ -1,3 +1,4 @@
+// TEACHING MODULE: OfflineRenderJob controls a background CPU render task with observable state, progress and diagnostics. Renderer/Film perform actual work; owner must join/cancel safely and not expose stale partial state.
 module;
 
 #include <atomic>
