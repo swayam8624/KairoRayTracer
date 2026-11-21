@@ -15,9 +15,17 @@ Read each phase in order. Every link goes to a source file or directory in this 
 
 ## 2. Scene and rendering code
 
-1. [`src`](src)
-2. [`include`](include)
-3. [`scenes`](scenes)
+1. [`KairoRayTracer.cppm`](KairoRayTracer.cppm)
+2. [`Scene.cppm`](Scene.cppm)
+3. [`RayTracerTypes.cppm`](RayTracerTypes.cppm)
+4. [`Camera.cppm`](Camera.cppm)
+5. [`SceneParser.cppm`](SceneParser.cppm)
+6. [`Primitive.cppm`](Primitive.cppm)
+7. [`Material.cppm`](Material.cppm)
+8. [`WhittedIntegrator.cppm`](WhittedIntegrator.cppm)
+9. [`PathIntegrator.cppm`](PathIntegrator.cppm)
+10. [`Renderer.cppm`](Renderer.cppm)
+11. [`scenes`](scenes)
 
 ## 3. Verification and outputs
 
