@@ -1,3 +1,4 @@
+// TEACHING MODULE: Texture2D stores linear-color texels and nearest/bilinear filtering. Source loader handles PPM/P3 and bounds checks; UV coordinate policy and gamma conversion must agree with materials.
 module;
 
 #include <algorithm>
