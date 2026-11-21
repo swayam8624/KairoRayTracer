@@ -1,3 +1,4 @@
+// TEACHING FILE: Catch2 tests exercise scene parser errors, ray/primitive intersections, brute-force versus BVH hits, material modes, image I/O, seeded path sampling and threaded/single-threaded parity. Finite/nonblank pixels are weaker evidence than a ground-truth rendering error metric.
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
