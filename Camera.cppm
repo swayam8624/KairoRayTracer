@@ -1,3 +1,9 @@
+// TEACHING MAP — Camera.cppm
+// Maps film coordinates and projection/lens parameters into primary rays. The integrator
+// traces these through Scene; handedness, field-of-view, sampling and shutter assumptions
+// affect every image.
+// Follow READING_ORDER.md from camera rays to hit shading and film output.
+
 module;
 
 #include <cmath>
