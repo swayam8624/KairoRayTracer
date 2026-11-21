@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// CPU image-generation driver. Validates Scene settings, partitions pixel/tile work, chooses Integrator
+// variants and stores output in Film; not the interactive KairoRenderer GPU facade.
+// Cross-file guide: docs/SOURCE_READING_ORDER.md.
+
 module;
 
 #include <chrono>
