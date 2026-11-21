@@ -1,3 +1,4 @@
+// TEACHING MODULE: Point, directional, spot and area source records define authored emitted energy and geometry. Integrators interpret falloff and sampling; lights do not emit draw commands or own backend resources.
 module;
 
 #include <cstdint>
