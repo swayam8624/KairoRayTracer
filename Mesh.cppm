@@ -1,3 +1,8 @@
+// TEACHING MAP — Mesh.cppm
+// Renderable triangle mesh and intersection/acceleration adapters. OBJLoader supplies
+// validated geometry, Scene stores instances, integrators query hit points and normals.
+// See READING_ORDER.md for source-to-scene-to-integrator interactions.
+
 module;
 
 #include <vector>
