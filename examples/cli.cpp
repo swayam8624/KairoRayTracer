@@ -1,3 +1,4 @@
+// TEACHING FILE: Command-line composition root parses .kairo scene, optional integrator/size/sample flags, renders into Film, exports image and stats. Parser/Renderer/ImageIO each owns distinct validation/failure paths.
 #include <filesystem>
 #include <iostream>
 #include <charconv>
