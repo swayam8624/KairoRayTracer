@@ -1,3 +1,4 @@
+// TEACHING MODULE: C++23 umbrella module reexports camera, scene, geometry adapters, integrators, renderer and preview APIs. It does not allocate an implicit global GPU device; runtime behavior remains in constituent modules.
 export module Kairo.Foundation.RayTracer;
 
 // Umbrella module for users who want the complete V1 ray tracer surface through
