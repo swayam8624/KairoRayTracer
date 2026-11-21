@@ -1,3 +1,8 @@
+// SOURCE STUDY NOTE:
+// Recursive deterministic-style specular reflection/refraction and direct shading. Compare
+// PathIntegrator's sampled light transport for different noise and recursion behavior.
+// See docs/SOURCE_READING_ORDER.md for the complete image-generation path.
+
 module;
 
 #include <cstdint>
