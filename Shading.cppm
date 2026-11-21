@@ -1,3 +1,9 @@
+// TEACHING MAP — Shading.cppm
+// Surface hit normal/material and light evaluation helpers shared by integrators. Geometry
+// determines hit information; material and light APIs determine scattering/illumination
+// response.
+// See READING_ORDER.md for source-to-scene-to-integrator interactions.
+
 module;
 
 #include <stdexcept>
