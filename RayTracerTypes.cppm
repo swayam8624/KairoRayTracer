@@ -1,3 +1,9 @@
+// TEACHING MAP — RayTracerTypes.cppm
+// Core ray/path tracer types and result contracts shared between Scene, integrators and film
+// output. Geometry and KairoSpatial provide primitives and BVH acceleration; this module
+// defines rendering semantics.
+// Follow READING_ORDER.md from camera rays to hit shading and film output.
+
 module;
 
 #include <algorithm>
