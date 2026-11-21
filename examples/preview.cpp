@@ -1,3 +1,4 @@
+// TEACHING FILE: GLFW demonstration launches CPU render then displays Film pixels in an OpenGL host window. This preview is not the realtime KairoRenderer editor/player backend.
 #include <algorithm>
 #include <charconv>
 #include <cstdint>
