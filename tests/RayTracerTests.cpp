@@ -1,3 +1,8 @@
+// TEACHING MAP — tests/RayTracerTests.cpp
+// Checks ray intersections, material/radiance calculations, sampler determinism and rendering
+// outputs against reference expectations.
+// See READING_ORDER.md for CPU ray path, API consumers and verification scope.
+
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
