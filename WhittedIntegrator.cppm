@@ -1,3 +1,8 @@
+// TEACHING MAP — WhittedIntegrator.cppm
+// Recursive deterministic reflection/refraction and direct lighting path. Compare its bounce
+// model and shadow behavior against Monte Carlo PathIntegrator.
+// Follow READING_ORDER.md for integrator/camera/material/film API boundaries.
+
 module;
 
 #include <cstdint>
