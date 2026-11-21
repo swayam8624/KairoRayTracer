@@ -1,3 +1,4 @@
+// TEACHING MODULE: Holds sphere/triangle primitive variants with material IDs and hit record conversion. Geometry computes actual intersections; Scene manages IDs and acceleration structure. It is not a type-erased owning mesh scene graph.
 module;
 
 #include <algorithm>
