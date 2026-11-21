@@ -1,3 +1,9 @@
+// TEACHING MAP — Color.cppm
+// Color representation, conversion and output conventions consumed by
+// material/light/integrators and image writers. Linear radiance calculations must not be
+// confused with display-encoded sRGB.
+// Follow READING_ORDER.md from camera rays to hit shading and film output.
+
 module;
 
 #include <algorithm>

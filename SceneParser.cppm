@@ -1,3 +1,8 @@
+// TEACHING MAP — SceneParser.cppm
+// Text or DSL scene parser creating cameras, materials, lights and primitive instances.
+// Parser validation separates authored scene input from renderer-owned runtime objects.
+// See READING_ORDER.md for source-to-scene-to-integrator interactions.
+
 module;
 
 #include <charconv>

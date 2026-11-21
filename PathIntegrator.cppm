@@ -1,3 +1,9 @@
+// TEACHING MAP — PathIntegrator.cppm
+// Monte Carlo path tracer: traces successive scattering events, samples
+// BSDF/light/environment and estimates radiance. Sampler/PDF/MIS consistency determines bias
+// and variance.
+// Follow READING_ORDER.md for integrator/camera/material/film API boundaries.
+
 module;
 
 #include <algorithm>

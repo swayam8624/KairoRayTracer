@@ -1,3 +1,9 @@
+// TEACHING MAP — OfflineRenderJob.cppm
+// Batch/offline rendering job contract that composes Scene, Camera, integrator, Film and
+// output path. Job validation and output provenance differ from native interactive window
+// operation.
+// See READING_ORDER.md for CPU ray path, API consumers and verification scope.
+
 module;
 
 #include <atomic>

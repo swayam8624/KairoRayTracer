@@ -1,3 +1,8 @@
+// TEACHING MAP — PBRIntegrator.cppm
+// Physically based shading/integration for direct or limited-bounce lighting.
+// Material/Shading provide BRDF values; Scene and Light supply visibility/emission.
+// Follow READING_ORDER.md for integrator/camera/material/film API boundaries.
+
 module;
 
 #include <cstdint>

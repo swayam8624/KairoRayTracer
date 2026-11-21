@@ -1,3 +1,9 @@
+// TEACHING MAP — KairoRayTracer.cppm
+// Public C++23 offline CPU ray-tracing facade. Re-exports geometry, camera, material, film,
+// integrator and renderer contracts. This path is separate from realtime Metal/Vulkan
+// KairoRenderer.
+// Follow READING_ORDER.md from camera rays to hit shading and film output.
+
 export module Kairo.Foundation.RayTracer;
 
 // Umbrella module for users who want the complete V1 ray tracer surface through

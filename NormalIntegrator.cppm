@@ -1,3 +1,8 @@
+// TEACHING MAP — NormalIntegrator.cppm
+// Debug integrator mapping hit normals into colors. Geometry frame and normal transformations
+// matter; debug-color output does not establish shading correctness.
+// Follow READING_ORDER.md for integrator/camera/material/film API boundaries.
+
 module;
 
 #include <optional>

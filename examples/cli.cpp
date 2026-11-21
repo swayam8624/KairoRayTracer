@@ -1,3 +1,8 @@
+// TEACHING MAP — examples/cli.cpp
+// Example command-line entrypoint for scene parsing, job configuration and offline image
+// output; follow its calls into Renderer and ImageIO.
+// See READING_ORDER.md for CPU ray path, API consumers and verification scope.
+
 #include <filesystem>
 #include <iostream>
 #include <charconv>

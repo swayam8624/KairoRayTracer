@@ -1,3 +1,8 @@
+// TEACHING MAP — OBJLoader.cppm
+// Imports OBJ geometry and UV/normals into portable mesh objects. Material association,
+// invalid indices, and coordinate conventions must be checked before Scene adds the results.
+// See READING_ORDER.md for source-to-scene-to-integrator interactions.
+
 module;
 
 #include <cmath>

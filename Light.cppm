@@ -1,3 +1,8 @@
+// TEACHING MAP — Light.cppm
+// Light source sampling and emitted radiance models. PathIntegrator samples lights using
+// PDFs/MIS; Scene owns the emitters, and shaders must use compatible units.
+// See READING_ORDER.md for source-to-scene-to-integrator interactions.
+
 module;
 
 #include <cstdint>

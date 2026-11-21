@@ -1,3 +1,9 @@
+// TEACHING MAP — ProgressiveRenderer.cppm
+// Progressive sample accumulation over time/batches using Sampler and Film. Repeatability,
+// sample count and convergence should be measured separately from interactive preview redraw
+// frequency.
+// Follow READING_ORDER.md for integrator/camera/material/film API boundaries.
+
 module;
 
 #include <cstdint>

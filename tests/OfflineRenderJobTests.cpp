@@ -1,3 +1,8 @@
+// TEACHING MAP — tests/OfflineRenderJobTests.cpp
+// Verifies offline job parsing, output artifacts and failure behavior separately from
+// material/geometry numerical correctness.
+// See READING_ORDER.md for CPU ray path, API consumers and verification scope.
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <stdexcept>

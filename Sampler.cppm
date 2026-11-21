@@ -1,3 +1,8 @@
+// TEACHING MAP — Sampler.cppm
+// Produces reproducible pixel/path random samples for Monte Carlo integrators. Deterministic
+// seeds are necessary to compare path-tracer variance and performance.
+// Follow READING_ORDER.md from camera rays to hit shading and film output.
+
 module;
 
 #include <algorithm>

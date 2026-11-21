@@ -1,3 +1,9 @@
+// TEACHING MAP — Film.cppm
+// Stores radiance samples and accumulated pixel estimates. ProgressiveRenderer and Renderer
+// write samples; ImageIO encodes the finished result. Radiance accumulation is distinct from
+// display gamma/tone mapping.
+// Follow READING_ORDER.md from camera rays to hit shading and film output.
+
 module;
 
 #include <cstdint>

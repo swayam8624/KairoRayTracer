@@ -1,3 +1,8 @@
+// TEACHING MAP — examples/preview.cpp
+// Example host window for previewing the CPU ray tracer. Its frame loop consumes render data
+// rather than implementing light transport.
+// See READING_ORDER.md for CPU ray path, API consumers and verification scope.
+
 #include <algorithm>
 #include <charconv>
 #include <cstdint>
