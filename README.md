@@ -1,5 +1,7 @@
 # KairoRayTracer
 
+**Read the code as a course:** [Linked source-reading order](docs/SOURCE_READING_ORDER.md) — start with rays/pixels, continue through BVH and integrators, then examine thread scheduling and regression tests.
+
 `KairoRayTracer` is a standalone CPU renderer in the Kairo workspace. It is the
 first visible graphics artifact that forces the foundation stack to work
 together:
