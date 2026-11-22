@@ -16,6 +16,9 @@ export namespace kairo::foundation::raytracer
     };
 
     [[nodiscard]]
+    // Mix the supplied 32-bit sample key into a repeatable value in [0,1). This
+    // tiny hash is for pixel jitter and sampling decorrelation, not randomness
+    // suitable for security or a measured low-discrepancy sequence.
     inline float Hash01(
         std::uint32_t value) noexcept
     {
@@ -30,6 +33,10 @@ export namespace kairo::foundation::raytracer
     }
 
     [[nodiscard]]
+    // Divide the unit film pixel into ceil(sqrt(SPP)) strata per axis, select the
+    // sampleIndex cell and jitter it with a hash of pixel coordinates, sample
+    // index and configured seed. Sampling is independent of which worker claims
+    // the tile.
     inline PixelSample StratifiedPixelSample(
         std::uint32_t x,
         std::uint32_t y,
@@ -37,11 +44,17 @@ export namespace kairo::foundation::raytracer
         std::uint32_t samplesPerPixel,
         std::uint32_t seedOffset = 0) noexcept
     {
+        // Single-sample mode places the ray at the exact pixel center (0.5,0.5). This
+        // avoids introducing stochastic pixel jitter when one deterministic primary
+        // sample is requested.
         if (samplesPerPixel <= 1u)
         {
             return {};
         }
 
+        // For non-square samples per pixel, the final row of the side-by-side grid
+        // may remain incomplete. This is finite stratification, not a full balanced
+        // n-rooks or Sobol sampling guarantee.
         const std::uint32_t side =
             static_cast<std::uint32_t>(
                 std::ceil(std::sqrt(static_cast<float>(samplesPerPixel))));
@@ -52,6 +65,9 @@ export namespace kairo::foundation::raytracer
         const std::uint32_t sy =
             sampleIndex / side;
 
+        // Derive jitter from immutable (x,y,sampleIndex,seedOffset) rather than a
+        // shared mutable RNG. Render scheduling/thread count therefore cannot change
+        // sampled coordinates for a fixed scene/settings tuple.
         const std::uint32_t seed =
             x * 73856093u ^
             y * 19349663u ^
