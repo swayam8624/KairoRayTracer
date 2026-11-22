@@ -56,6 +56,11 @@ export namespace kairo::foundation::raytracer
         // Render settings determine image dimensions, samples, tile size,
         // CPU thread count and chosen integrator. A fresh Film and worker-
         // local statistics are created for this invocation.
+        // Allocate one fresh CPU Film per call, validate image/sample
+        // and tile settings, then split pixels into disjoint rectangles.
+        // Threads claim tile indices atomically; each writes unique
+        // Film positions and aggregates only worker-local statistics.
+        // Output ownership is returned as Film plus merged RenderStats.
         RenderResult Render(
             const Scene& scene) const
         {
@@ -73,6 +78,9 @@ export namespace kairo::foundation::raytracer
             const std::uint32_t tileCount = tilesX * tilesY;
             const std::uint32_t hardwareThreads =
                 std::max(1u, std::thread::hardware_concurrency());
+            // Clamp requested workers to at least one and no more than
+            // the number of tiles. Extra threads would only add startup
+            // and scheduling overhead without owning any pixel work.
             const std::uint32_t workerCount =
                 std::max(
                     1u,
@@ -88,6 +96,10 @@ export namespace kairo::foundation::raytracer
             std::vector<std::thread> workers;
             workers.reserve(workerCount);
 
+            // Each pixel accumulates SamplesPerPixel independent rays
+            // with a deterministic pixel/sample/seed jitter. Divide
+            // accumulated radiance by sample count *once* on write,
+            // not after applying a nonlinear display transfer.
             auto renderPixel =
                 [&](std::uint32_t x, std::uint32_t y, RenderStats& localStats)
                 {
@@ -124,6 +136,10 @@ export namespace kairo::foundation::raytracer
                         accumulated / static_cast<float>(scene.Settings.SamplesPerPixel));
                 };
 
+            // Work-stealing by fetch_add only claims whole tiles.
+            // Rectangles do not overlap; Film pixel writes need no
+            // shared mutex as long as tile partitioning stays valid.
+            // RenderStats use one slot per worker, merged after joins.
             auto renderTiles =
                 [&](std::uint32_t workerIndex)
                 {
@@ -157,6 +173,9 @@ export namespace kairo::foundation::raytracer
             for (std::uint32_t workerIndex = 0; workerIndex < workerCount; ++workerIndex)
                 workers.emplace_back(renderTiles, workerIndex);
 
+            // Join workers before merging statistics or returning
+            // Film; otherwise the caller could observe partially
+            // rendered pixels or a concurrently changing result.
             for (std::thread& worker : workers)
                 worker.join();
 
@@ -175,6 +194,10 @@ export namespace kairo::foundation::raytracer
         [[nodiscard]]
         // Fog is composed at the primary-ray layer for specific beauty
         // modes, not by modifying Scene or each integrator separately.
+        // Beauty fog is a post-integrator primary-ray composition.
+        // It separately asks Scene for hit distance but deliberately
+        // passes null statistics: profiling excludes this extra query.
+        // The image changes; existing ray-count counters do not.
         static Color3f ApplyPrimaryFog(
             const Scene& scene,
             const Rayf& ray,
@@ -197,6 +220,11 @@ export namespace kairo::foundation::raytracer
         // Dispatch rendering policy to specialized integrator modules.
         // A new RenderMode belongs here and in settings validation/tests;
         // adding its enum alone is not sufficient.
+        // Dispatch the selected mode to normal/depth/Whitted/PBR/path
+        // or debugging integrations. Path mode seeds a local RNG
+        // from (pixel x,y,sample,configured seed), so independent
+        // tile scheduling does not change sample sequences.
+        // A RenderMode enum alone is insufficient without this case.
         static Color3f Trace(
             const Scene& scene,
             const Rayf& ray,
@@ -219,6 +247,10 @@ export namespace kairo::foundation::raytracer
                     scene, ray, TracePBRDirect(scene, ray, stats));
             case RenderMode::Path:
             {
+                // Hash integer coordinates, sample number and
+                // user-defined seed; this creates per-sample RNG
+                // state for recursive TracePath, independent of
+                // whichever worker happened to claim the tile.
                 std::uint32_t rng =
                     x * 73856093u ^
                     y * 19349663u ^
