@@ -1,6 +1,6 @@
 # KairoRayTracer
 
-**Read the code as a course:** [Linked source-reading order](docs/SOURCE_READING_ORDER.md) · [Worked path-tracing, BVH and light-sampling lab](docs/PATH_TRACING_LIGHT_SAMPLING_AND_BVH_LAB.md) — start with rays/pixels, continue through BVH and integrators, then examine thread scheduling and regression tests.
+**Read the code as a course:** [Linked source-reading order](docs/SOURCE_READING_ORDER.md) · [Worked path-tracing, BVH and light-sampling lab](docs/PATH_TRACING_LIGHT_SAMPLING_AND_BVH_LAB.md) · [Deterministic pixel seeds, thread-safe CPU Film and estimator limits](docs/PIXEL_SEED_TO_FILM_THREADING_LAB.md) — start with rays/pixels, continue through BVH and integrators, then examine thread scheduling and regression tests.
 
 `KairoRayTracer` is a standalone CPU renderer in the Kairo workspace. It is the
 first visible graphics artifact that forces the foundation stack to work
