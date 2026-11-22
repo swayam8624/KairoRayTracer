@@ -1,6 +1,5 @@
 // TEACHING MODULE: PathIntegrator computes a CPU diffuse-light-transport
 // estimate by tracing rays through Scene::Intersect, sampling a cosine-
-/* NOTE: inline comments only; no radiance state is owned by this module. */
 // weighted hemisphere, and recursively accumulating direct plus indirect
 // contributions. Scene::Occluded is used for direct-light shadow probes.
 //
