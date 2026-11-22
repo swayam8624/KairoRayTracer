@@ -78,6 +78,9 @@ export namespace kairo::foundation::raytracer
         }
 
         [[nodiscard]]
+        // Store material by value and return its dense array index.
+        // Primitive records keep this index; deleting/reordering
+        // Materials without updating primitives invalidates shading.
         std::uint32_t AddMaterial(
             Material material)
         {
@@ -89,6 +92,9 @@ export namespace kairo::foundation::raytracer
         }
 
         [[nodiscard]]
+        // Empty textures are rejected before becoming renderer data.
+        // Environment/material texture references are dense scene
+        // indices, not persistent KairoAssets AssetIDs.
         std::uint32_t AddTexture(
             Texture2D texture)
         {
@@ -102,6 +108,10 @@ export namespace kairo::foundation::raytracer
         }
 
         [[nodiscard]]
+        // On a ray miss, choose solid background or enabled
+        // environment color/lat-long texture sampling, then apply
+        // radiance intensity. There is no geometry surface/UV hit
+        // to shade in this path.
         Color3f SampleEnvironment(
             const Vec3f& direction) const
         {
@@ -124,6 +134,9 @@ export namespace kairo::foundation::raytracer
             return radiance * Environment.Intensity;
         }
 
+        // Reject a nonpositive radius and unknown material before
+        // storing a sphere. BuildAcceleration must be rerun before
+        // BVH-based queries see changes to the primitive array.
         void AddSphere(
             const Vec3f& center,
             float radius,
@@ -197,6 +210,11 @@ export namespace kairo::foundation::raytracer
         // Rebuild the index from the current primitive vector. A scene
         // geometry edit requires this operation before BVH queries can
         // refer to the correct array indices and shape bounds.
+        // Convert each primitive's exact geometry to its AABB and
+        // stable-in-this-scene dense primitive index. Configure
+        // KairoSpatial BVH (e.g. SAH/Morton) from Settings and build.
+        // AABB nodes are only candidate pruning; the shader still
+        // uses exact sphere/triangle ray tests for final SurfaceHit.
         void BuildAcceleration()
         {
             // Choosing brute force empties the BVH rather than keeping a
@@ -236,6 +254,12 @@ export namespace kairo::foundation::raytracer
         // BVH traversal delegates exact geometry hits to the callback.
         // The closest primitive is intersected again after traversal to
         // recover renderer-specific UV, normal and material data.
+        // If acceleration is unavailable or brute force selected,
+        // test all primitives directly. Otherwise KairoSpatial ray
+        // traversal invokes the exact primitive callback and finds
+        // the nearest distance; reconstruct full SurfaceHit material
+        // and vertex UV/barycentric details for shading.
+        // Returned primitive index belongs to the CURRENT scene.
         std::optional<SurfaceHit> Intersect(
             const Rayf& ray,
             RenderStats* stats = nullptr) const
@@ -306,6 +330,10 @@ export namespace kairo::foundation::raytracer
 
         [[nodiscard]]
         /// TEACHING API: std::optional<SurfaceHit> BruteForceIntersect( — Check every primitive directly; useful to verify BVH hit equivalence on small scenes.
+        // O(primitives) exact-hit reference, independent of BVH
+        // topology and insertion order. Compare against Intersect
+        // in tests to detect missing candidates or bad pruning,
+        // not to assert that BVH shading is automatically faster.
         std::optional<SurfaceHit> BruteForceIntersect(
             const Rayf& ray,
             RenderStats* stats = nullptr) const
@@ -342,6 +370,10 @@ export namespace kairo::foundation::raytracer
         // Shadows need any blocker before a finite light distance, not
         // the closest material-bearing SurfaceHit. RaycastAny can stop
         // early, making these probes cheaper than full shading queries.
+        // Shadow-ray existence query: any surface hit before max
+        // light distance blocks direct lighting. It need not find
+        // the nearest SurfaceHit or interpolate full shading UVs,
+        // which makes it a different contract from Intersect.
         bool Occluded(
             const Rayf& ray,
             float maxDistance,
@@ -397,6 +429,9 @@ export namespace kairo::foundation::raytracer
     private:
         spatial::BVH m_BVH;
 
+        // Prevent a primitive from retaining an out-of-range
+        // dense material index, which would otherwise throw later
+        // inside the path integrator's hot shading loop.
         void ValidateMaterialIndex(
             std::uint32_t materialIndex) const
         {
