@@ -215,6 +215,10 @@ export namespace kairo::foundation::raytracer
         // KairoSpatial BVH (e.g. SAH/Morton) from Settings and build.
         // AABB nodes are only candidate pruning; the shader still
         // uses exact sphere/triangle ray tests for final SurfaceHit.
+        // Rebuild a static KairoSpatial BVH from current render primitive *AABBs* and
+        // scene-local primitive indexes. SAH/Morton affect traversal cost, not
+        // authoritative sphere/triangle geometry. Mutating Primitives afterward
+        // invalidates index semantics.
         void BuildAcceleration()
         {
             // Choosing brute force empties the BVH rather than keeping a
@@ -260,6 +264,10 @@ export namespace kairo::foundation::raytracer
         // the nearest distance; reconstruct full SurfaceHit material
         // and vertex UV/barycentric details for shading.
         // Returned primitive index belongs to the CURRENT scene.
+        // Either brute-force all render primitives or traverse BVH with an *exact*
+        // primitive ray-hit callback, returning the closest SurfaceHit. Traversal's
+        // spatial hit lacks renderer material/UV data, so intersect the winning
+        // primitive again to recover shading metadata.
         std::optional<SurfaceHit> Intersect(
             const Rayf& ray,
             RenderStats* stats = nullptr) const
@@ -277,6 +285,9 @@ export namespace kairo::foundation::raytracer
                 return BruteForceIntersect(ray, stats);
             }
 
+            // A BVH node's AABB tests only prune candidate primitives; the callback must
+            // perform the actual sphere/triangle intersection. PrimitiveIndex maps to
+            // Scene::Primitives while the acceleration is current.
             const spatial::SpatialRaycastResult result =
                 spatial::Raycast(
                     m_BVH,
@@ -334,6 +345,9 @@ export namespace kairo::foundation::raytracer
         // topology and insertion order. Compare against Intersect
         // in tests to detect missing candidates or bad pruning,
         // not to assert that BVH shading is automatically faster.
+        // Test all primitives and keep minimum positive hit distance. This simple
+        // algorithm is the correctness oracle for BVH traversal, especially after
+        // scene geometry/acceleration changes, despite its O(N) cost per ray.
         std::optional<SurfaceHit> BruteForceIntersect(
             const Rayf& ray,
             RenderStats* stats = nullptr) const
@@ -374,6 +388,9 @@ export namespace kairo::foundation::raytracer
         // light distance blocks direct lighting. It need not find
         // the nearest SurfaceHit or interpolate full shading UVs,
         // which makes it a different contract from Intersect.
+        // Shadow queries ask only whether *any* exact intersection lies before
+        // maxDistance, not for UV/material at the closest hit. KairoSpatial RaycastAny
+        // can terminate early, while brute-force validates existence against geometry.
         bool Occluded(
             const Rayf& ray,
             float maxDistance,
@@ -408,6 +425,9 @@ export namespace kairo::foundation::raytracer
                 return false;
             }
 
+            // The callback rechecks exact geometry and finite light distance; a traversal
+            // bounding-box overlap alone cannot cast a shadow. This query deliberately
+            // returns a boolean rather than a full SurfaceHit.
             return spatial::RaycastAny(
                 m_BVH,
                 ray,
