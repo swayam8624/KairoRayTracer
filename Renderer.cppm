@@ -1,4 +1,19 @@
-// TEACHING MODULE: CPU render entrypoint coordinates pixel samples, Camera ray generation, Scene hit lookup, mode-specific integrators and Film output, possibly across CPU threads. Native GPU display is a separate host concern.
+// TEACHING MODULE: Renderer is the CPU image-formation driver. For each
+// pixel/sample it obtains a deterministic sample offset from Sampler, asks
+// Camera for a primary ray, selects an integrator, and writes averaged
+// radiance to Film. The Scene owns geometry/BVH/materials and handles hits;
+// Film/ImageIO own image data/output, not a GPU framebuffer.
+//
+// Work is partitioned into disjoint rectangular tiles. Threads claim tile
+// indices via an atomic counter and only touch their own pixel coordinates.
+// Each worker accumulates RenderStats locally, then the main thread merges
+// stats after joining. These ownership boundaries matter for safe edits:
+// sharing a mutable per-pixel RNG or unsynchronized film writes across tiles
+// would invalidate the current design.
+//
+// RenderMode dispatch includes normal/depth/debug, Whitted, direct PBR and
+// path tracing. Primary fog runs after selected beauty integrators and adds
+// an uncounted intersection for diagnostic-statistics compatibility.
 module;
 
 #include <chrono>
@@ -38,6 +53,9 @@ export namespace kairo::foundation::raytracer
     {
     public:
         [[nodiscard]]
+        // Render settings determine image dimensions, samples, tile size,
+        // CPU thread count and chosen integrator. A fresh Film and worker-
+        // local statistics are created for this invocation.
         RenderResult Render(
             const Scene& scene) const
         {
@@ -62,6 +80,9 @@ export namespace kairo::foundation::raytracer
                         scene.Settings.ThreadCount == 0 ? hardwareThreads : scene.Settings.ThreadCount,
                         tileCount == 0 ? 1u : tileCount));
 
+            // Workers claim unique tile indices; each tile covers a
+            // nonoverlapping pixel rectangle, so a shared Film can be
+            // populated without two workers writing the same pixel.
             std::atomic<std::uint32_t> nextTile = 0;
             std::vector<RenderStats> workerStats(workerCount);
             std::vector<std::thread> workers;
@@ -74,7 +95,9 @@ export namespace kairo::foundation::raytracer
 
                     for (std::uint32_t sample = 0; sample < scene.Settings.SamplesPerPixel; ++sample)
                     {
-                        const PixelSample pixelSample =
+                        // Sample offsets depend on coordinates, sample index and
+            // configured seed, not the executing worker index.
+            const PixelSample pixelSample =
                             StratifiedPixelSample(
                                 x,
                                 y,
@@ -150,6 +173,8 @@ export namespace kairo::foundation::raytracer
 
     private:
         [[nodiscard]]
+        // Fog is composed at the primary-ray layer for specific beauty
+        // modes, not by modifying Scene or each integrator separately.
         static Color3f ApplyPrimaryFog(
             const Scene& scene,
             const Rayf& ray,
@@ -169,6 +194,9 @@ export namespace kairo::foundation::raytracer
         }
 
         [[nodiscard]]
+        // Dispatch rendering policy to specialized integrator modules.
+        // A new RenderMode belongs here and in settings validation/tests;
+        // adding its enum alone is not sufficient.
         static Color3f Trace(
             const Scene& scene,
             const Rayf& ray,
