@@ -8,6 +8,8 @@ Trace a single ray before reading light transport optimization. This is an offli
 
 Read each phase in order. Every link goes to a source file or directory in this repository. For a directory, inspect its public interface and then its implementation files. After each phase, identify the caller, the state it owns, the inputs it validates, and its observable outputs.
 
+**Work through one actual pixel:** [Camera sample → exact BVH hit → shadow/light PDFs → diffuse bounce → CPU film](PATH_TRACING_LIGHT_SAMPLING_AND_BVH_LAB.md). The guide records the current area-light sampler's four-position repetition and the limits of its MIS claim.
+
 ## Stage A — Pixel data, rays and scene ownership
 
 Read these before changing the renderer's threading or physics-looking
@@ -41,7 +43,7 @@ sample coordinates are generated.
 
 **Exercise:** compare `Scene::BruteForceIntersect` with
 `Scene::Intersect` after `BuildAcceleration`. Follow the BVH callback
-into [KairoSpatial's traversal](https://github.com/swayam8624/KairoSpatial/blob/docs/teaching-walkthrough-20261121/BVHTraversal.cppm).
+into [KairoSpatial's traversal](https://github.com/swayam8624/KairoSpatial/blob/main/BVHTraversal.cppm).
 The BVH narrows candidate triangles; a primitive-specific callback
 computes the real surface intersection. `Scene::Intersect` recomputes
 the nearest surface hit to recover material/UV metadata absent from the
