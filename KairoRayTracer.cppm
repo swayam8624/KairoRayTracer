@@ -1,4 +1,21 @@
-// TEACHING MODULE: C++23 umbrella module reexports camera, scene, geometry adapters, integrators, renderer and preview APIs. It does not allocate an implicit global GPU device; runtime behavior remains in constituent modules.
+// TEACHING ENTRY POINT: This public C++23 module aggregates a CPU ray-tracing
+// pipeline. `export import` republishes narrow interfaces; it does not
+// execute a render, allocate an implicit GPU device or construct a scene.
+//
+// Data ownership flows from SceneParser/Scene (primitives, materials, lights,
+// camera) through Scene::BuildAcceleration (KairoSpatial BVH) to Renderer,
+// which samples camera rays and selects an Integrator. Scene::Intersect calls
+// exact Geometry ray tests after BVH candidate traversal. Film accumulates
+// results, and ImageIO serializes pixels; ProgressiveRenderer and
+// OfflineRenderJob manage multi-step/asynchronous CPU rendering.
+//
+// KairoMath defines vector/transform conventions, KairoGeometry implements
+// ray/shape intersection, KairoSpatial owns acceleration structures; this
+// repository owns rendering semantics, shading and output. It is independent
+// of KairoRenderer's native GPU/swapchain lifetime.
+//
+// Read docs/SOURCE_READING_ORDER.md in stages, and verify expected image
+// results in tests/RayTracerTests.cpp before relying on performance claims.
 export module Kairo.Foundation.RayTracer;
 
 // Umbrella module for users who want the complete V1 ray tracer surface through
