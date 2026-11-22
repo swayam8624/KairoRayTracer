@@ -1,4 +1,15 @@
-// TEACHING MODULE: Owns camera, materials, lights, textures, primitive array and BVH acceleration data. Scene::Intersect returns closest SurfaceHit using KairoSpatial candidates and actual primitive intersection; output is not a physics contact manifold.
+// TEACHING MODULE: Scene owns render-facing camera/material/light/primitive
+// arrays and a KairoSpatial BVH index over *primitive IDs*. The BVH stores
+// simple bounds and IDs, not material/UV attributes. Scene::Intersect uses
+// BVH candidates and exact sphere/triangle intersection callbacks; it then
+// repeats the nearest exact intersection to recover SurfaceHit UV/barycentric
+// metadata for shading. BruteForceIntersect is the comparison oracle.
+//
+// Primitive IDs are array indices here: changing the array invalidates the
+// existing acceleration mapping until BuildAcceleration is called again.
+// Ray query results are renderer hits, not PhysicsEngine contact manifolds.
+// Renderer and Integrators consume Scene::Intersect/Occluded; ImageIO consumes
+// Film pixels rather than a Scene directly.
 module;
 
 #include <cstdint>
@@ -183,8 +194,13 @@ export namespace kairo::foundation::raytracer
         }
 
         /// TEACHING API: void BuildAcceleration( — Convert source primitives into KairoSpatial bounded records and construct chosen BVH; brute-force path remains an oracle.
+        // Rebuild the index from the current primitive vector. A scene
+        // geometry edit requires this operation before BVH queries can
+        // refer to the correct array indices and shape bounds.
         void BuildAcceleration()
         {
+            // Choosing brute force empties the BVH rather than keeping a
+            // stale hierarchy. Intersect will test each primitive directly.
             if (Settings.Acceleration == AccelerationMode::BruteForce)
             {
                 m_BVH = spatial::BVH{};
@@ -217,6 +233,9 @@ export namespace kairo::foundation::raytracer
 
         [[nodiscard]]
         /// TEACHING API: std::optional<SurfaceHit> Intersect( — Use acceleration candidates then exact primitive hit test to return nearest SurfaceHit and material/UV data.
+        // BVH traversal delegates exact geometry hits to the callback.
+        // The closest primitive is intersected again after traversal to
+        // recover renderer-specific UV, normal and material data.
         std::optional<SurfaceHit> Intersect(
             const Rayf& ray,
             RenderStats* stats = nullptr) const
@@ -320,6 +339,9 @@ export namespace kairo::foundation::raytracer
 
         [[nodiscard]]
         /// TEACHING API: bool Occluded( — Return whether any blocker lies along shadow ray before light distance; do not confuse with nearest-hit shading.
+        // Shadows need any blocker before a finite light distance, not
+        // the closest material-bearing SurfaceHit. RaycastAny can stop
+        // early, making these probes cheaper than full shading queries.
         bool Occluded(
             const Rayf& ray,
             float maxDistance,
