@@ -1,4 +1,19 @@
-// TEACHING MODULE: Monte Carlo light transport traces stochastic reflection/scattering paths, accumulating throughput and environment/emission contributions. Random01 and cosine hemisphere sampling need documented PDF weights and seed policy; this is CPU path tracing, not GPU shading.
+// TEACHING MODULE: PathIntegrator computes a CPU diffuse-light-transport
+// estimate by tracing rays through Scene::Intersect, sampling a cosine-
+/* NOTE: inline comments only; no radiance state is owned by this module. */
+// weighted hemisphere, and recursively accumulating direct plus indirect
+// contributions. Scene::Occluded is used for direct-light shadow probes.
+//
+// Random01 is a small mutable xorshift generator. The caller (Renderer::Trace)
+// derives one seed from pixel coordinates, sample and SampleSeed; the
+// integrator threads that state through recursion. PowerHeuristic computes
+// a PDF weight for area-light estimates, but do not assume the complete
+// two-technique MIS estimator is present: verify both sampling techniques
+// and PDFs before describing the result as unbiased.
+//
+// The current recursive path uses diffuse albedo, Russian roulette after
+// depth 2, and environment/emissive termination. This is not an arbitrary
+// physically based BSDF/path integrator for every MaterialType.
 module;
 
 #include <algorithm>
@@ -25,6 +40,8 @@ export namespace kairo::foundation::raytracer
     using namespace kairo::foundation::geometry;
 
     [[nodiscard]]
+    // Mutates the caller-owned RNG state; seed selection determines
+    // repeatability, not just the distribution of sampled numbers.
     inline float Random01(
         std::uint32_t& state) noexcept
     {
@@ -36,6 +53,9 @@ export namespace kairo::foundation::raytracer
     }
 
     [[nodiscard]]
+    // Sample a local cosine-weighted hemisphere and construct a world
+    // basis around the supplied surface normal. Normalization fallbacks
+    // avoid an undefined basis for near-degenerate inputs.
     inline Vec3f CosineHemisphereDirection(
         const Vec3f& normal,
         std::uint32_t& rng) noexcept
@@ -75,6 +95,9 @@ export namespace kairo::foundation::raytracer
     }
 
     [[nodiscard]]
+    // Squares competing PDFs to construct a balance weight. This helper
+    // alone is not evidence that the full estimator uses complementary
+    // light- and BSDF-sampled paths.
     inline float PowerHeuristic(
         float pdfA,
         float pdfB) noexcept
@@ -89,6 +112,9 @@ export namespace kairo::foundation::raytracer
     }
 
     [[nodiscard]]
+    // Direct lighting uses explicit shadow queries over several light
+    // types. The area-light sample count, surface geometry and PDF weighting
+    // should be tested for bias and variance independently.
     inline Color3f DirectLambert(
         const Scene& scene,
         const SurfaceHit& hit,
@@ -266,6 +292,9 @@ export namespace kairo::foundation::raytracer
     }
 
     [[nodiscard]]
+    // Recursive indirect diffuse bounce, with environment on miss,
+    // emission on emissive hit and stochastic continuation. Inspect
+    // MaterialType handling before assuming dielectric/specular paths.
     inline Color3f TracePath(
         const Scene& scene,
         const Rayf& ray,
