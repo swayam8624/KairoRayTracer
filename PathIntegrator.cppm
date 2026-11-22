@@ -45,6 +45,10 @@ export namespace kairo::foundation::raytracer
     // Renderer seeds per pixel/sample; using one shared RNG across
     // worker threads would introduce races and schedule-dependent noise.
     // This is sampling pseudorandomness, not a cryptographic generator.
+    // Advance the per-path xorshift state. Renderer::Trace seeds it from pixel
+    // and sample so worker scheduling cannot change initial sample identity. It
+    // is repeatable pseudorandomness, not cryptographic or low-discrepancy
+    // sampling.
     inline float Random01(
         std::uint32_t& state) noexcept
     {
@@ -64,6 +68,9 @@ export namespace kairo::foundation::raytracer
     // normal component=sqrt(1-v). Build a stable tangent/bitangent
     // frame and rotate the local sample into world coordinates.
     // The corresponding Lambertian PDF is cos(theta)/pi.
+    // Use two uniform draws to sample cosine-weighted outgoing directions around
+    // the current normal. The Lambert PDF is cos(theta)/pi; multiplying bounced
+    // radiance by albedo below assumes this PDF/BRDF cancellation.
     inline Vec3f CosineHemisphereDirection(
         const Vec3f& normal,
         std::uint32_t& rng) noexcept
@@ -110,6 +117,9 @@ export namespace kairo::foundation::raytracer
     // wA=pA^2/(pA^2+pB^2), with a small denominator guard.
     // An MIS *weight* alone does not make an unbiased MIS estimator:
     // contributions and both sampling paths/PDFs must be paired.
+    // Return pA squared divided by pA squared plus pB squared. This weight alone
+    // cannot establish MIS unbiasedness: both light-sampled and BSDF-sampled
+    // contribution paths and their consistent PDFs are required.
     inline float PowerHeuristic(
         float pdfA,
         float pdfB) noexcept
@@ -134,6 +144,10 @@ export namespace kairo::foundation::raytracer
     // The area-light path uses a deterministic 2x2 repeated grid and
     // a PDF-based weight; this is not a fully verified two-strategy
     // physically unbiased MIS estimator.
+    // Accumulate visibility-tested Lambert-like direct lighting from point,
+    // directional, spot and rectangle sources. Shadow rays stop short of finite
+    // lights and bias origin off the surface; check physical units/PDFs before
+    // treating output as a reference integrator.
     inline Color3f DirectLambert(
         const Scene& scene,
         const SurfaceHit& hit,
@@ -232,6 +246,10 @@ export namespace kairo::foundation::raytracer
         // by U,V. Only sample-index mod 2 determines each coordinate;
         // beyond four samples these 2x2 points repeat, so merely
         // raising Samples does not add distinct sample locations.
+        // Rectangle emitter sampling is a deterministic 2x2 location grid repeated
+        // for sample index >=4. Extra requested samples then repeat those positions,
+        // so soft-shadow variance does not benefit as expected and the current MIS
+        // estimator should be treated cautiously.
         for (const AreaLight& light : scene.AreaLights)
         {
             const std::uint32_t samples =
@@ -303,6 +321,10 @@ export namespace kairo::foundation::raytracer
                 // belongs in a consistent estimator's contribution
                 // and MIS weight; inspect both before calling this
                 // full physically correct area-light integration.
+                // Convert rectangular area sampling to a solid-angle PDF proportional to
+                // distance^2/(area*cosLight). The implementation applies a power weight, but
+                // the area-light contribution formula needs independent unbiasedness tests
+                // against an oracle.
                 const float lightPdf =
                     lightDistance * lightDistance /
                     std::max(lightArea * lightFacing, 1.0e-5f);
@@ -332,6 +354,10 @@ export namespace kairo::foundation::raytracer
     // A non-emissive surface receives explicit direct light and one
     // cosine-hemisphere indirect sample with albedo throughput.
     // This does not sample arbitrary specular/dielectric BSDF paths.
+    // Recursively trace a diffuse-only continuation: environment on miss,
+    // emission on emissive hit, direct lighting on opaque hits and one
+    // cosine-weighted bounce. Path mode currently does not sample arbitrary
+    // dielectric or specular BSDF transitions.
     inline Color3f TracePath(
         const Scene& scene,
         const Rayf& ray,
@@ -395,6 +421,10 @@ export namespace kairo::foundation::raytracer
         // paths beyond depth 2. Divide surviving indirect contribution
         // by survival probability to avoid systematic darkening from
         // this termination rule, assuming the sampling model is sound.
+        // Russian roulette probabilistically ends low-throughput deeper paths;
+        // surviving indirect radiance is divided by survival probability to
+        // compensate termination under the estimator assumptions. The minimum/maximum
+        // survival caps affect variance.
         if (depth >= 2 && Random01(rng) > survivalProbability)
         {
             return direct;
