@@ -61,6 +61,9 @@ export namespace kairo::foundation::raytracer
         // Threads claim tile indices atomically; each writes unique
         // Film positions and aggregates only worker-local statistics.
         // Output ownership is returned as Film plus merged RenderStats.
+        // Validate scene settings, allocate CPU Film, divide into nonoverlapping
+        // tiles and run bounded worker threads. All threads join before the returned
+        // Film/RenderStats become visible to the caller.
         RenderResult Render(
             const Scene& scene) const
         {
@@ -75,6 +78,9 @@ export namespace kairo::foundation::raytracer
                 (scene.Settings.Width + tileSize - 1u) / tileSize;
             const std::uint32_t tilesY =
                 (scene.Settings.Height + tileSize - 1u) / tileSize;
+            // Partial right/bottom tiles still cover all pixels exactly once. Unique
+            // pixel ownership makes simultaneous worker Film writes safe without
+            // per-pixel mutexes.
             const std::uint32_t tileCount = tilesX * tilesY;
             const std::uint32_t hardwareThreads =
                 std::max(1u, std::thread::hardware_concurrency());
@@ -100,6 +106,9 @@ export namespace kairo::foundation::raytracer
             // with a deterministic pixel/sample/seed jitter. Divide
             // accumulated radiance by sample count *once* on write,
             // not after applying a nonlinear display transfer.
+            // Each pixel integrates SamplesPerPixel camera rays in linear color, with
+            // deterministic pixel-stratified offsets. Averaging occurs before any
+            // nonlinear image/display transform.
             auto renderPixel =
                 [&](std::uint32_t x, std::uint32_t y, RenderStats& localStats)
                 {
@@ -140,6 +149,9 @@ export namespace kairo::foundation::raytracer
             // Rectangles do not overlap; Film pixel writes need no
             // shared mutex as long as tile partitioning stays valid.
             // RenderStats use one slot per worker, merged after joins.
+            // Atomically claim whole tile indices using fetch_add, giving each worker
+            // disjoint film rectangles. Store counters in worker-local stats and merge
+            // only after threads join.
             auto renderTiles =
                 [&](std::uint32_t workerIndex)
                 {
@@ -176,6 +188,8 @@ export namespace kairo::foundation::raytracer
             // Join workers before merging statistics or returning
             // Film; otherwise the caller could observe partially
             // rendered pixels or a concurrently changing result.
+            // Join all workers before summing statistics and returning CPU Film;
+            // otherwise output could race unfinished pixels or counters.
             for (std::thread& worker : workers)
                 worker.join();
 
@@ -225,6 +239,8 @@ export namespace kairo::foundation::raytracer
         // from (pixel x,y,sample,configured seed), so independent
         // tile scheduling does not change sample sequences.
         // A RenderMode enum alone is insufficient without this case.
+        // Select explicit debug/Whitted/PBR/path integrator, not a shared GPU shader.
+        // A BVH diagnostic image cannot on its own validate physical light transport.
         static Color3f Trace(
             const Scene& scene,
             const Rayf& ray,
@@ -251,6 +267,9 @@ export namespace kairo::foundation::raytracer
                 // user-defined seed; this creates per-sample RNG
                 // state for recursive TracePath, independent of
                 // whichever worker happened to claim the tile.
+                // Seed mutable path-bounce RNG from fixed pixel, sample and user seed, not
+                // the executing worker ID. Different scheduling yields the same initial
+                // per-path random sequence.
                 std::uint32_t rng =
                     x * 73856093u ^
                     y * 19349663u ^
