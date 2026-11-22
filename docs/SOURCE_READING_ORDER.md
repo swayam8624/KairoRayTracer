@@ -10,6 +10,8 @@ Read each phase in order. Every link goes to a source file or directory in this 
 
 **Work through one actual pixel:** [Camera sample → exact BVH hit → shadow/light PDFs → diffuse bounce → CPU film](PATH_TRACING_LIGHT_SAMPLING_AND_BVH_LAB.md). The guide records the current area-light sampler's four-position repetition and the limits of its MIS claim.
 
+**Work one image in detail:** [Pixel stratification, per-thread tile ownership, exact BVH hits, cosine PDFs and area-light MIS caveats](PIXEL_SEED_TO_FILM_THREADING_LAB.md). It gives numerical and concurrency exercises without treating a rendered screenshot as proof of unbiasedness.
+
 ## Stage A — Pixel data, rays and scene ownership
 
 Read these before changing the renderer's threading or physics-looking
